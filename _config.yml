@@ -12,7 +12,7 @@ author:
   url      : http://mhackeroni.it
   twitter  : https://twitter.com/mhackeroni
 
-paginate: 2
+paginate: 4
 comments: true
 paginate_path: "/page/:num"
 
