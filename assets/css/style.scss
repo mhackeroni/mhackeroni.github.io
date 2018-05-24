@@ -1,0 +1,115 @@
+---
+---
+@import url('https://fonts.googleapis.com/css?family=Press+Start+2P|Quantico|Ubuntu+Mono');
+@import "jekyll-theme-minimal";
+
+$press_start: 'Press Start 2P', cursive;
+$ubuntu_mono: 'Ubuntu Mono', monospace;
+
+html, body {
+	background-color: #FFC253;
+	color: #839496;
+}
+
+body{
+	font: 14px/1.5 $ubuntu_mono, "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	color: #000457;
+}
+
+ul.my_links{
+	margin:auto;
+	width: 80%;	
+	background-color: #FFC253;
+	border: none;
+}
+
+ul.my_links li {
+	text-align: right;
+	// background-color: #caCb1e;	
+	width: auto;
+	padding-right:5%; 
+	padding-left:6%;
+	border: none;
+}
+
+ul.my_links li a {
+	width: 100%;
+	text-decoration: underline;
+	text-align: right;
+	color: #000457;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+ul.my_links li a:hover {
+	width: 100%;
+	text-decoration: underline;
+	text-align: right;
+	color: #36587D;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+pre.highlight{
+	background-color: #F18F01;
+	border-radius: 0px; 
+    border: 1px solid #36587D;
+}
+
+pre.highlight code{
+	font-size: 10px;
+}
+
+#social {
+	display: inline-block;
+	padding-top: 30px;
+	padding-left: 5px;
+}
+
+#twitter{
+	background-color: #36587D;
+	border-radius: 10px;
+}
+
+h1, h2, h3 {
+	color: #cb4b16;
+}
+
+h1 a, h1 a:visited, h1 a:active {
+	color: #cb4b16;
+}
+
+a{
+	color: #36587D;
+}
+
+#social_contacts{
+	text-align: center;
+	padding-top: 30px;
+}
+
+#social_contacts img{
+	height: 24px;
+	width: 24px;
+}
+
+/* width */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    background: #FFC253; 
+}
+ 
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: #36587D; 
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: #000457; 
+}
