@@ -3,8 +3,4 @@ title: "DEFCON CTF QUALS 2018 - Report"
 author: "mHACKeroni team"
 ---
 
-Yesterday the security gang of the [University of Venice](http://www.unive.it) challenged the best hackers in the world in [RuCTFE 2015](https://ructf.org/e/2015/), one of the most important information security competition. Despite some connectivity problems, at the end of a fierce battle we placed 12th out of 300, resulting once again the 1st italian team.
-
-<a href="/assets/data/ctf/ructfe2015/photos/c00kies.jpg"><img src="/assets/data/ctf/ructfe2015/photos/c00kies_small.jpg" alt="c00kies@venice"></a>
-
-We would like to thank [HackerDom](http://www.hackerdom.ru/) from [Ural Federal University](http://urfu.ru/en/) for such a great organization and for being able to ensure a fair event regardless of their infrastructure issues. Congrats also to the winners!
+Abstract: we got 2nd place !!!!! Congrats also to the winners!
