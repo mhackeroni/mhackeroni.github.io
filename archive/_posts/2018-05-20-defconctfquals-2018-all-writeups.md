@@ -1,10 +1,10 @@
 ---
-title: "DEFCON CTF Quals write ups"
-author: "mHackeroni team"
+title: "DEFCON CTF QUALS 2018 - Write ups"
+author: "mHACKeroni team"
 ---
 
-This is the collection of writeups for the DEF CON Quals 2018 by the Mhackeroni team.
-[Adamtune](#adamtune)-[Babypwn1805](#babypwn1805)-[Bitflipper](#bitflipper)
+This is the collection of writeups for the DEF CON Quals 2018 by the Mhackeroni team.  
+Index: [Adamtune](#adamtune) - [Babypwn1805](#babypwn1805) - [Bitflipper](#bitflipper) - [Ddtek: Preview](#ddtek-preview) - [Easy Pisy](#easy-pisy) - [Elastic Cloud Compute](#elastic-cloud-compute) - [ELF Crumble](#elf-crumble) - [Exzendtential-crisis](#exzendtential-crisis) - [Flagsifier](#flagsifier) - [Geckome](#geckome) - [Ghettohackers: Throwback](#ghettohackers-throwback) - [It's-a me!](#its-a-me) - [Note Oriented Programmig](#note-oriented-programmig) - [Official](#official) - [PHP Eval White-List](#php-eval-white-list) - [Ps-secure](#ps-secure) - [Race Wars](#race-wars) - [Sbva](#sbva) - [Shellql](#shellql) - [TechSupport](#techsupport) - [You Already Know](#you-already-know)
 
 
 Adamtune
@@ -1146,7 +1146,7 @@ Geckome
 -------
 Another web challenge, this time served at http://d2b24dd8.quals2018.oooverflow.io. After logging in with the provided credentials `admin@oooverflow.io:admin`, we are redirected to the following [browser test page](http://d2b24dd8.quals2018.oooverflow.io/browsertest.php):
 
-```HTML
+```html
 <html>
     <head>
         <title>Testing the browser...</title>
@@ -1257,7 +1257,7 @@ A quick overview of the inline script suggests that the flag can be accessed by 
 
 By cross-checking all the conditions, the list of possible candidates reduced to Google Chrome between versions 37 and 39 (included). At this point it was just a matter of running these [old browsers](https://google-chrome.en.uptodown.com/ubuntu/old) inside a VM, dump the list of plugins along with other features exploited by the fingerprinting function and use a bit of (brute) force.
 
-```Python
+```python
 import hashlib
 import sys
 
@@ -1286,7 +1286,7 @@ for ven in vendors:
 
 The script returns the string `oGoogle Inc.828186libpepflashplayer.soThis plugin allows you to securely access other computers that have been shared with you. To use this plugin you must first install the <a href="https://chrome.google.com/remotedesktop">Chrome Remote Desktop</a> webapp.` that can be used, in a base64-encoded form, to access the flag:
 
-```Bash
+```bash
 $ curl 'http://d2b24dd8.quals2018.oooverflow.io/flag.php?f=b0dvb2dsZSBJbmMuODI4MTg2bGlicGVwZmxhc2hwbGF5ZXIuc29UaGlzIHBsdWdpbiBhbGxvd3MgeW91IHRvIHNlY3VyZWx5IGFjY2VzcyBvdGhlciBjb21wdXRlcnMgdGhhdCBoYXZlIGJlZW4gc2hhcmVkIHdpdGggeW91LiBUbyB1c2UgdGhpcyBwbHVnaW4geW91IG11c3QgZmlyc3QgaW5zdGFsbCB0aGUgPGEgaHJlZj0iaHR0cHM6Ly9jaHJvbWUuZ29vZ2xlLmNvbS9yZW1vdGVkZXNrdG9wIj5DaHJvbWUgUmVtb3RlIERlc2t0b3A8L2E+IHdlYmFwcC4='
 OOO{th3r3c@nb30nly0n3br0ws3r!}
 ```
@@ -1306,7 +1306,7 @@ Given that our brains have been compromised since a long time by playing too man
 
 Python one-liner to solve the challenge:
 
-```Python
+```python
 >>> import string
 >>> s = 'Anyo!e!howouldsacrificepo!icyforexecu!!onspeedthink!securityisacomm!ditytop!urintoasy!tem!'
 >>> ''.join(string.ascii_lowercase[len(c)-1] if c else ' ' for c in s.split('!')).rstrip()
@@ -2497,7 +2497,7 @@ rand() -> 47 # offset of first sub_B0A
 
 #### At this stage we can reconstruct the real flow of the program:
 
-```C
+```c
 void main(int argc, char **argv)
 {
     char *func_ptr;
@@ -2570,7 +2570,7 @@ Me: We'll see..
 
 ### First checks:
 
-```
+```bash
 $ file ./racewars: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked
 $ checksec --file ./racewars: 
     Arch:     amd64-64-little
@@ -2589,7 +2589,7 @@ We understood that upgrade_transmission(transmission_struct * transmission) coul
 not carefully checks for memory bounds when upgrading the Nth gear ratio. If transmission->gears_num is set to 0xffffffffffffffff 
 then you can easily gain both arbitrary read and write (byte per byte).
 
-```C
+```c
 unsigned __int64 __fastcall upgrade_transmission(transmission_struct *transmission)
 {
   __int64 inserted_value; // [rsp+10h] [rbp-20h]
@@ -2640,7 +2640,7 @@ We can just adjust the number of tires to pass the check but overflow the intege
 This ends up returning a valid tire_struct() pointer but not updating the top_chunk addr in the custom
 arena struct.
 
-```C
+```c
   puts("how many pairs of tires do you need?");
   __isoc99_scanf("%d", &tires_pairs);
   if ( tires_pairs <= 1 )
@@ -2669,7 +2669,7 @@ value.
 To achieve a call to system('/bin/sh\x00') we found convinient to overwrite custom function pointers implemented by the allocator,
 which are used in the cleaning_up function (sub_4009F3()) showed below.
 
-```C
+```c
 void __fastcall cleaning_up(custom_arena *buffer)
 {
   custom_arena *ptr; // ST10_8
@@ -2695,7 +2695,7 @@ Calculating offsets to system() and "/bin/sh" its easy since libc is provided wi
 ### Final exploit
 
 
-```Python
+```python
 #!/usr/bin/env python2
 
 from pwn import *
@@ -3209,7 +3209,7 @@ In fact, the `HTTP_Get` function contains a 257 bytes buffer (`command`), used
 to perform the HTTP GET request, and then copies the URL into it without
 checking sizes:
 
-```C
+```c
 #ifdef __STDC__
 int HTTP_Get(const char * arg)
 #else

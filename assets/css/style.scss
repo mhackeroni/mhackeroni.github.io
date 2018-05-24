@@ -94,22 +94,22 @@ a{
 }
 
 /* width */
-::-webkit-scrollbar {
-    width: 8px;
+section ::-webkit-scrollbar {
+    width: 10px;
     height: 8px;
 }
 
 /* Track */
-::-webkit-scrollbar-track {
+section ::-webkit-scrollbar-track {
     background: #FFC253; 
 }
  
 /* Handle */
-::-webkit-scrollbar-thumb {
+section ::-webkit-scrollbar-thumb {
     background: #36587D; 
 }
 
 /* Handle on hover */
-::-webkit-scrollbar-thumb:hover {
+section ::-webkit-scrollbar-thumb:hover {
     background: #000457; 
 }

@@ -1,6 +1,6 @@
 ---
-title: "RuCTFE 2015 report"
-author: "Marco Squarcina"
+title: "DEFCON CTF QUALS 2018 - Report"
+author: "mHACKeroni team"
 ---
 
 Yesterday the security gang of the [University of Venice](http://www.unive.it) challenged the best hackers in the world in [RuCTFE 2015](https://ructf.org/e/2015/), one of the most important information security competition. Despite some connectivity problems, at the end of a fierce battle we placed 12th out of 300, resulting once again the 1st italian team.
