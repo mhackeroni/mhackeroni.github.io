@@ -2,8 +2,9 @@
 //
 // container
 .container {
-  max-width: -webkit-calc(#{$content-width} - (#{$spacing-unit} * 2));
-  max-width:         calc(#{$content-width} - (#{$spacing-unit} * 2));
+  // max-width: -webkit-calc(#{$content-width} - (#{$spacing-unit} * 2));
+  // max-width:         calc(#{$content-width} - (#{$spacing-unit} * 2));
+  width: 90%;
   margin-right: auto;
   margin-left: auto;
   padding-right: $spacing-unit;
@@ -57,7 +58,7 @@
     }
 
   .container {
-      background: rgba(#000, .75);
+      background: rgba(#000, 1);
       width: 100%;
       max-width: none;
   }
@@ -174,6 +175,38 @@
 // menu icon
 .menu-icon {
   display: none;
+}
+
+//
+// page
+.page {
+    width: 100%;
+    display: flex;
+
+
+    .social {
+        width: 25%;
+        float: left;
+        padding-left: 30px;
+        // padding-right: 30px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .content {
+        width: 75%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    @media screen and (max-width: 800px) {
+        .social {
+            display: none;
+        }
+        .content{
+            width: 100%;
+        }
+    }
 }
 
 //
