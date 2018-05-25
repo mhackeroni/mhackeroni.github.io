@@ -119,3 +119,7 @@ section ::-webkit-scrollbar-thumb {
 section ::-webkit-scrollbar-thumb:hover {
     background: #000457;
 }
+
+header ul a:active {
+    background-color: transparent;
+}
