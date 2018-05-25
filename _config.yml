@@ -1,9 +1,13 @@
-# title: Minimal theme
+title: mHACKeroni
 logo: /assets/img/logo.png
 twitter_logo: /assets/img/twitter.png
 gmail_logo: /assets/img/gmail.png
 github_logo: /assets/img/github.png
-# description: Minimal is a theme for GitHub Pages.
+author:
+    name: mHACKeroni
+    mail: mhackeroni@gmail.com
+    github: https://github.com/mhackeroni
+
 show_downloads: false
 google_analytics:
 theme: jekyll-theme-minimal

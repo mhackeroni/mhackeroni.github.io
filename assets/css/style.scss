@@ -18,16 +18,16 @@ body{
 
 ul.my_links{
 	margin:auto;
-	width: 80%;	
+	width: 80%;
 	background-color: #FFC253;
 	border: none;
 }
 
 ul.my_links li {
 	text-align: right;
-	// background-color: #caCb1e;	
+	// background-color: #caCb1e;
 	width: auto;
-	padding-right:5%; 
+	padding-right:5%;
 	padding-left:6%;
 	border: none;
 }
@@ -52,7 +52,7 @@ ul.my_links li a:hover {
 
 pre.highlight{
 	background-color: #F18F01;
-	border-radius: 0px; 
+	border-radius: 0px;
     border: 1px solid #36587D;
 }
 
@@ -69,6 +69,12 @@ pre.highlight code{
 #twitter{
 	background-color: #36587D;
 	border-radius: 10px;
+}
+
+@media print, screen and (max-width: 960px) {
+  #social {
+      display: none;
+  }
 }
 
 h1, h2, h3 {
@@ -101,15 +107,15 @@ section ::-webkit-scrollbar {
 
 /* Track */
 section ::-webkit-scrollbar-track {
-    background: #FFC253; 
+    background: #FFC253;
 }
- 
+
 /* Handle */
 section ::-webkit-scrollbar-thumb {
-    background: #36587D; 
+    background: #36587D;
 }
 
 /* Handle on hover */
 section ::-webkit-scrollbar-thumb:hover {
-    background: #000457; 
+    background: #000457;
 }
