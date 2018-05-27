@@ -8,6 +8,8 @@ author:
     mail: mhackeroni@gmail.com
     github: https://github.com/mhackeroni
 
+disqus_account: mhackeroni
+
 show_downloads: false
 google_analytics:
 theme: jekyll-theme-minimal
