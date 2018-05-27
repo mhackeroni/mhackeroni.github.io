@@ -7,7 +7,7 @@ This is the collection of writeups for the DEF CON Quals 2018 by the Mhackeroni 
 
 Index
 -------
-[Adamtune](#adamtune) - [Babypwn1805](#babypwn1805) - [Bitflipper](#bitflipper) - [Ddtek: Preview](#ddtek-preview) - [Easy Pisy](#easy-pisy) - [Elastic Cloud Compute](#elastic-cloud-compute) - [ELF Crumble](#elf-crumble) - [Exzendtential-crisis](#exzendtential-crisis) - [Flagsifier](#flagsifier) - [Geckome](#geckome) - [Ghettohackers: Throwback](#ghettohackers-throwback) - [It's-a me!](#its-a-me) - [Note Oriented Programmig](#note-oriented-programmig) - [Official](#official) - [PHP Eval White-List](#php-eval-white-list) - [Ps-secure](#ps-secure) - [Race Wars](#race-wars) - [Sbva](#sbva) - [Shellql](#shellql) - [TechSupport](#techsupport) - [You Already Know](#you-already-know)
+[Adamtune](#adamtune) - [Babypwn1805](#babypwn1805) - [Bitflipper](#bitflipper) - [Ddtek: Preview](#ddtek-preview) - [Easy Pisy](#easy-pisy) - [Elastic Cloud Compute](#elastic-cloud-compute) - [ELF Crumble](#elf-crumble) - [Exzendtential-crisis](#exzendtential-crisis) - [Flagsifier](#flagsifier) - [Geckome](#geckome) - [Ghettohackers: Throwback](#ghettohackers-throwback) - [It's-a me!](#its-a-me) - [Note Oriented Programming](#note-oriented-programming) - [Official](#official) - [PHP Eval White-List](#php-eval-white-list) - [Ps-secure](#ps-secure) - [Race Wars](#race-wars) - [Sbva](#sbva) - [Shellql](#shellql) - [TechSupport](#techsupport) - [You Already Know](#you-already-know)
 
 
 Adamtune
@@ -1500,7 +1500,7 @@ p.interactive()
 
 
 
-Note Oriented Programmig
+Note Oriented Programming
 ------------------------
 We had remote access to the challenge and we've been provided with the executable `nop`.  
 We could only insert some integer values that after certain operations became strings representing notes and octaves. We could execute 'notes' from `A0` to `G#8`.
