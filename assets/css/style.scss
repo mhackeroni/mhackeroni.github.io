@@ -51,7 +51,7 @@ ul.my_links li a:hover {
 }
 
 pre.highlight{
-	background-color: #F18F01;
+	background-color: #F3A32F;
 	border-radius: 0px;
     border: 1px solid #36587D;
 }
@@ -122,4 +122,18 @@ section ::-webkit-scrollbar-thumb:hover {
 
 header ul a:active {
     background-color: transparent;
+}
+
+.highlight .cp{
+	color:#000457;
+}
+
+.highlight .c1 {
+    color: #36587D;
+    font-style: italic;
+}
+
+.highlight .cm {
+    color: #36587D;
+    font-style: italic;
 }

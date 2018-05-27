@@ -13,7 +13,9 @@ google_analytics:
 theme: jekyll-theme-minimal
 paginate: 10
 highlighter: rouge
-plugins: [jekyll-paginate]
+plugins: 
+  - jekyll-paginate
+  - jekyll-sitemap
 
 defaults:
   -
