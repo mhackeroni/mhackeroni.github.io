@@ -77,6 +77,12 @@ pre.highlight code{
   }
 }
 
+@media print, screen and (max-height: 750px) {
+  #social {
+      display: none;
+  }
+}
+
 h1, h2, h3 {
 	color: #cb4b16;
 }
@@ -136,4 +142,8 @@ header ul a:active {
 .highlight .cm {
     color: #36587D;
     font-style: italic;
+}
+
+.highlight .bp {
+    color: #36587D;
 }
