@@ -1,6 +1,7 @@
 ---
 title: "DEFCON CTF QUALS 2018 - Write ups"
 author: "mHACKeroni team"
+comments: true
 ---
 
 This is the collection of writeups for the DEF CON Quals 2018 by the Mhackeroni team. 
@@ -8,6 +9,7 @@ This is the collection of writeups for the DEF CON Quals 2018 by the Mhackeroni 
 Index
 -------
 [Adamtune](#adamtune) - [Babypwn1805](#babypwn1805) - [Bitflipper](#bitflipper) - [Ddtek: Preview](#ddtek-preview) - [Easy Pisy](#easy-pisy) - [Elastic Cloud Compute](#elastic-cloud-compute) - [ELF Crumble](#elf-crumble) - [Exzendtential-crisis](#exzendtential-crisis) - [Flagsifier](#flagsifier) - [Geckome](#geckome) - [Ghettohackers: Throwback](#ghettohackers-throwback) - [It's-a me!](#its-a-me) - [Note Oriented Programming](#note-oriented-programming) - [Official](#official) - [PHP Eval White-List](#php-eval-white-list) - [Ps-secure](#ps-secure) - [Race Wars](#race-wars) - [Sbva](#sbva) - [Shellql](#shellql) - [TechSupport](#techsupport) - [You Already Know](#you-already-know)
+#### [Comments section](#disqus_thread)
 
 
 Adamtune
