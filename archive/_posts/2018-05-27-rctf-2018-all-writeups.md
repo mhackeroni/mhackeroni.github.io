@@ -2573,6 +2573,7 @@ In just a few seconds it prints out `RCTF{5o_M@ny_an7i_Rev3rsing_Techn!qu3s}`. D
 RNote4
 ------
 [Attachment](https://drive.google.com/open?id=1xL3tT2ttR2BJJsUi7kgoe13Nb2Ff5LXF)
+
 **Disclaimer:** this is an unintended solution.
 No PIE and no leaks, it's evidently intended to be exploited via dl-resolve.
 Looks like I had a brain fart and didn't think about that.
