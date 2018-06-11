@@ -17,8 +17,8 @@ Team organization and communication are fundamental to succeed: that's why we ne
 
 We propose the following sponsorship levels:
 * **Silver (5.000 euro)** - We'll feature you on our social networks; people on the DEF CON game arena will put your sticker on their laptop.
-* **Gold (10.000 euro)** - Everything in Silver, plus logo on our t-shirt. We'll send you the CVs of every team member: BSc, MSc, PhD, and postgraduate students in cybersecurity.
-* **Platinum (15.000 euro)** - Everything in Silver, plus big logo on our hoodie. We'll send you the CVs of every team member: BSc, MSc, PhD, and postgraduate students in cybersecurity.
+* **Gold (10.000 euro)** - Everything in Silver, plus a small logo on our t-shirt. We'll send you the CVs of every team member: BSc, MSc, PhD, and postgraduate students in cybersecurity.
+* **Platinum (15.000 euro)** - Everything in Silver, plus logo on our hoodie. We'll send you the CVs of every team member: BSc, MSc, PhD, and postgraduate students in cybersecurity.
 
 We're of course open to any alternative proposal.
-Get in touch with us! Send us an email at **[mhackeroni@gmail.com](mailto:mhackeroni@gmail.com)**
+Get in touch with us! Send us an email at **[info@mhackeroni.it](mailto:info@mhackeroni.it)**
