@@ -2,6 +2,7 @@
 title: "DEF CON 26 CTF - Call for Sponsors"
 author: "mHACKeroni team"
 comments: true
+ogdescription: Help us get the team to Las Vegas to play the DEF CON CTF 26 finals.
 ---
 
 We are mHACKeroni, an Italian ethical hacking team -- a joint collaboration between four major universities and their teams: Polytechnic of Milan, University of Venice Ca' Foscari, University of Padua, and Sapienza University of Rome.
@@ -25,18 +26,18 @@ Get in touch with us! Send us an email at **[info@mhackeroni.it](mailto:info@mha
 
 **mHACKeroni in the news**
 
-* Politecnico di Milano:   
+* Politecnico di Milano:
 [https://www.deib.polimi.it/eng/..](https://www.deib.polimi.it/eng/news/dettagli/720)
-* Università Ca’ Foscari Venezia:  
+* Università Ca’ Foscari Venezia:
 [https://www.unive.it/..](https://www.unive.it/pag/14024/?tx_news_pi1%5Bnews%5D=5052&tx_news_pi1%5Bcontroller%5D=News&tx_news_pi1%5Baction%5D=detail&cHash=5b9c9d9dd0f9889d1a8d6d5dded39d14)
-* Università La Sapienza Roma:  
+* Università La Sapienza Roma:
 [https://www.uniroma1.it/it/notizia/..](https://www.uniroma1.it/it/notizia/gli-studenti-del-team-mhackeroni-al-secondo-posto-alle-qualifiche-della-piu-importante)
-* Università di Padova:  
+* Università di Padova:
 [http://www.unipd.it/ilbo/..](http://www.unipd.it/ilbo/cybersecurity-italia-unipd-seconde-gara-hacker-etici)
-* Il Giorno: Hacker sì, ma con un’etica - Dal Politecnico a Las Vegas con i “Mhackeroni”  
+* Il Giorno: Hacker sì, ma con un’etica - Dal Politecnico a Las Vegas con i “Mhackeroni”
 [https://www.ilgiorno.it/milano/..](https://www.ilgiorno.it/milano/cronaca/politecnico-hacker-etici-1.3939865)
 ![mHACKeroni team]({{"/assets/img/mhackeroni_ilgiorno.jpg" | absolute_url}})
-* Venezia Today:  
+* Venezia Today:
 [http://www.veneziatoday.it/attualita/..](http://www.veneziatoday.it/attualita/hacker-ca-foscari-finali-torneo-cybersecurity.html)
-* University Equipe:   
+* University Equipe:
 [https://universityequipe.com/..](https://universityequipe.com/hacker-etici-italiani-secondi-mondo)
