@@ -4,6 +4,33 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    {% if page.ogtype %}
+      <meta name="og:type" content="{{page.ogtype}}">
+    {% else %}
+      <meta name="og:type" content="summary">
+    {% endif %}
+
+    {% if page.ogtitle %}
+      <meta name="og:title" content="{{page.ogtitle}}">
+    {% else %}
+      <meta name="og:title" content="{{page.title}}">
+    {% endif %}
+
+    {% if page.ogdescription %}
+      <meta name="og:description" content="{{page.ogdescription | strip_html}}">
+    {% elsif page.excerpt %}
+      <meta name="og:description" content="{{page.excerpt | strip_html}}">
+    {% endif %}
+
+    {% if page.ogimage %}
+      <meta name="og:image" content="{{page.ogimage | absolute_url}}">
+    {% else %}
+      <meta name="og:image" content="{{site.logo | absolute_url}}">
+    {% endif %}
+
+    <meta name="twitter:site" content="@mhackeroni">
+
     <link rel="shortcut icon" type="image/x-icon" href="{{ "/favicon.ico" | absolute_url }}">
 {% seo %}
     <link rel="stylesheet" href="{{ "/assets/css/style.css?v=" | append: site.github.build_revision | relative_url }}">
@@ -38,7 +65,7 @@
       <section>
       {% if page.url != "/archive/2018/06/04/defconctf-finals-call-for-sponsors.html" %}
       <h1> <a class="shine" href="/archive/2018/06/04/defconctf-finals-call-for-sponsors.html">Check our Call for Sponsors here. Help mHACKeroni go to Vegas !!</a></h1><br>
-      {% endif %} 
+      {% endif %}
       {{ content }}
 
       </section>
@@ -66,6 +93,6 @@
         gtag('js', new Date());
         gtag('config', 'UA-119919900-1');
       </script>
-  
+
   </body>
 </html>
