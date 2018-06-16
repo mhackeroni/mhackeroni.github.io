@@ -4,6 +4,7 @@ author: "mHACKeroni team"
 comments: true
 ogdescription: Help us get the team to Las Vegas to play the DEF CON CTF 26 finals.
 ---
+[Scarica la versione in italiano]({{"assets/docs/mHACKeroni_sponsorhip.pdf" | absolute_url}})
 
 We are mHACKeroni, an Italian ethical hacking team -- a joint collaboration between four major universities and their teams: Polytechnic of Milan, University of Venice Ca' Foscari, University of Padua, and Sapienza University of Rome.
 
