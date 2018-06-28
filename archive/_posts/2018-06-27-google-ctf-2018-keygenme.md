@@ -1,6 +1,6 @@
 ---
 title: "KEYGENME - Google CTF 2018"
-author: "marcof,nearfxx"
+author: "marcof,nearffxx"
 comments: true
 tags: google ctf reversing mhackeroni
 ---
@@ -14,7 +14,7 @@ This was a 249pts reversing challenge from GoogleCTF-2018
 Stage One
 ----
 
-We are given an ELF 64 binary with an encrypted section containing its code base. The code is xored at runtime with an hardcoded key and later executed. We wrote an IDC script to decript the banary and make it possible to analyze in IDA.
+We are given an ELF 64 binary with an encrypted section containing its code base. The code is xored at runtime with an hardcoded key and later executed. We wrote an IDC script to decript the binary and make it possible to analyze in IDA.
 
 ```c 
 #include <idc.idc>
@@ -57,7 +57,7 @@ Understanding main3 (child process)
 -------
 As soon as we opened the child process we noticed antidebugging techniques. Basically the original code was filled with a bunch of trap instructions. The parent process would intercept its child traps and restore the original instructions.
 
-We straced the parent process to observe the patches it was supplying to its child. Below the significant outupt:
+We straced the parent process to observe the patches it was supplying to its child. Below the significant output:
 
 ```bash
 process_vm_writev(26117, [{iov_base="\x01\xca", iov_len=2}], 1, [{iov_base=0x555555554d56, iov_len=2}], 1, 0) = 2
@@ -91,7 +91,7 @@ process_vm_writev(26117, [{iov_base="\x8b\x55\xdc", iov_len=3}], 1, [{iov_base=0
 process_vm_writev(26117, [{iov_base="\x90\x5d\xc3", iov_len=3}], 1, [{iov_base=0x555555555744, iov_len=3}], 1, 0) = 3
 process_vm_writev(26117, [{iov_base="\xc1\xe8\x08", iov_len=3}], 1, [{iov_base=0x555555555b0f, iov_len=3}], 1, 0) = 3
 ```
-We parsed this output using an helper python script to generata IDC valid patching instructions we later copy-pasted in the IDA cmd-line.
+We parsed this output using an helper python script to generate IDC valid patching instructions we later copy-pasted in the IDA cmd-line.
 
 ```python
 import re
@@ -146,7 +146,7 @@ Our approach now is:
 - we get the 5 byte validation code from the server
 - we pass it to our patched version of the binary
 - the inserted puts() gives us the comparing value 
-- we applay the byte mappings and xoring keys on this value
+- we apply the byte mappings and xoring key on this value
 - we sent it back to the server
 - ~~we get the flag~~
 - no actually repeat 100 times
@@ -199,7 +199,7 @@ while True:
     r.recvuntil("OK\n")
 ```
 
-Attachements
+Attachments
 ----
 The original challenge files [here](https://drive.google.com/file/d/1CP7QQSWPNgzo_Hgxd78PyBi0WWReWMbC/view?usp=sharing)  
 Final exploit, patched *main* and *main3* binaries [here](https://drive.google.com/file/d/1VAU2HdpnfJOLSuxX3lsM3kQaTVhcZWPx/view?usp=sharing)
