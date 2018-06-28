@@ -1,6 +1,6 @@
 ---
 title: "KEYGENME - Google CTF 2018"
-author: "marcof,nearffxx"
+author: "marcof,nearffxx,Mercurio"
 comments: true
 tags: google ctf reversing mhackeroni
 ---
