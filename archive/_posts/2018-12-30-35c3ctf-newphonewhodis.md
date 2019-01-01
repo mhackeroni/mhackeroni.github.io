@@ -174,24 +174,24 @@ After a while playing with these software (and actually reading the source code)
 The problem was that the interface was very limited. It was sending only single sms with the 7bit encoding scheme and was accepting only ASCII character. I needed to be more flexible to be able to produce multi-part SMSes.
 I tried to sniff the output of `osmocombb` to be able to write a python script. But I quickly discovered that the full gsm protocol was involved.
 This includes asking and obtaining a channel to actually communicate with the baseband. Implementing all this stuff was time consuming and, in ctf, you do not have much time. 
-So I decided to patch `osmocombb` software to implement a command that let me send more customizable sms.
+So, I decided to patch `osmocombb` software to implement a command that let me send a more customizable sms.
 
 Full patch is available [`here`]({{"/assets/code/newphonewhodis_writeup/osmocombb_path.diff"|absolute_url}}). The interesting stuff is:
 
+Be able to specify that the packet contains a UDH header.
 ```c
    sms->ud_hdr_ind = atoi((char *)argv[1]);
 ```
-Be able to specify that the packet contains a UDH header.
+Specify that the data was 8bit encoded and not 7bit encoded.
 ```c
    sms->data_coding_scheme = 4;
 ```
-Specify that the data was 8bit encoded and not 7bit encoded.
+Write sms as hex encoded so that I could you any value.
 ```c
    char * text_hex = argv_concat(argv, argc, 3);
    char * text = hex2b(text_hex);
    int text_len = strlen(text_hex) / 2;
 ```
-Write sms as hex encoded so that I could you any value.
 
 The result is a command like this where I specify that UHD is included and the sms is hex encoded:
 
