@@ -101,4 +101,6 @@ We just added some code to convert the distance to ascii and append it to the fl
 
 It is a base64 that decodes to 
 
-FLAG : g00ooOOd_j0B!!!___uncomfort4ble__s3curity__is__n0t__4__security!!!!!(ctf) chqma@computer:~/ctf/codegate/algo_auth$
+```
+FLAG : g00ooOOd_j0B!!!___uncomfort4ble__s3curity__is__n0t__4__security!!!!!
+```
