@@ -5,12 +5,14 @@ comments: true
 tags: codegate ctf programming mhackeroni
 ---
 
+> I like an algorithm
+
 ```
-I like an algorithm 
-
-nc 110.10.147.104 15712 
+nc 110.10.147.104 15712
 nc 110.10.147.109 15712
+```
 
+```
 ==> Hi, I like an algorithm. So, i make a new authentication system.
 ==> It has a total of 100 stages.
 ==> Each stage gives a 7 by 7 matrix below sample.

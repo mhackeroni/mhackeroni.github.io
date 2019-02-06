@@ -5,15 +5,14 @@ comments: true
 tags: codegate ctf unintended mhackeroni
 ---
 
+> How not to pwn a modified 2018.11.18 Webkit
+
 ```
 Butterfree
-
 Download 2018.11.18 Webkit and Modified 
 
 nc 110.10.147.110 17423 
-
 Download 
-
 Download2
 ```
 
