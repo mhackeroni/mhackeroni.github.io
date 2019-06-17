@@ -23,4 +23,5 @@ If you wish to support us you can write to <a href="mailto:info@mhackeroni.it">i
 - People in the DEF CON game arena will put your sticker on their laptop
 - Logo on our t-shirts
 - Logo on our hoodies
-- Talk about our experience organizing and competing in CTF competitions CVs of every team member: BSc, MSc, PhD, and postgraduate students in cybersecurity
+- Talk about our experience organizing and competing in CTF competitions 
+- CVs of every team member: BSc, MSc, PhD, and postgraduate students in cybersecurity
