@@ -2,7 +2,8 @@
 title: "DEF CON 27 CTF - Call for Sponsors"
 author: "mHACKeroni team"
 comments: true
-ogdescription: Help us get the team to Las Vegas to play the DEF CON CTF 27 finals.
+redirect_from: "/call"
+description: Help us get the team to Las Vegas to play the DEF CON CTF 27 finals.
 ---
 <!-- [Scarica la versione in italiano]({{"assets/docs/mHACKeroni_sponsorhip.pdf" | absolute_url}}) -->
 
