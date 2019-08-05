@@ -181,31 +181,36 @@ strong {
 
 .sponsor img {
 	display: block;
-	// margin: 2em auto; // quick fix while we properly align stuff in the page
+	margin: 2em auto; // quick fix while we properly align stuff in the page
 }
 
 .platinum img{
 	max-width: 88%;
-	max-height: 7em;
+	max-height: 8em;
 }
 
 .gold img {
-	max-width: 250px;
+	//max-width: 250px;
+	max-width: 70%;
 	max-height: 7em;
 }
 
-.academic img {
-    max-width: 300px;
-    max-height: 100px;
-    margin-bottom: 1em;
-}
 .silver img {
-	max-width: 200px;
+	//max-width: 200px;
+	max-width: 50%;
+	max-height: 6em;
+}
+
+.academic img {
+    //max-width: 300px;
+	max-width: 50%;
+	max-height: 6em;
+    margin-bottom: 1em;
 }
 
 .sponsor a.supporter {
 	display: inline-block;
-	margin: 1em 0.2em 1em 0.2em;
+	//margin: 1em 0.2em 1em 0.2em;
 	width:22%;
 	height: 50px;
 }
