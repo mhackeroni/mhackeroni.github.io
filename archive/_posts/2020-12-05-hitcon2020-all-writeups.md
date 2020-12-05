@@ -196,7 +196,7 @@ After this first step, the bytecode could be subdivided in four main parts:
 
 The logical next step was to analyze the shellcode and the seccomp filter:
 
-```asm
+```
 ; Sigaction handler
    0:    48 b9 2c 34 3a 79 f5     movabs rcx,  0x3f8495f5793a342c
    a:    95 84 3f                 mov    edx,  DWORD PTR [rsi+0x4] # si_code
@@ -2855,7 +2855,7 @@ resources. We identified three types of locks:
 
 Internally, the `pool` is a structure that looks like this:
 
-```c=
+```c
 struct __attribute__((aligned(8))) s_pool
 {
   _QWORD token;
