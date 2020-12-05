@@ -71,13 +71,13 @@ straightforward:
 
 1. Each number must be between `0` and `0xFFFFF`.
 2. There is a global table of 40 hardcoded values: each i-th input is and-ed
-   (binary and) with the value at `table[2*i]` and the result must be equal with
+   (binary and) with the value at `table[2*i]` and the result must be equal to
    the value at `table[2*i+1]`.
-3. In each number, there cannot be three consecutive equal bits.
+3. Eeach number cannot contain three consecutive equal bits.
 4. There cannot be three equal bits at the same position in three consecutive
    numbers.
 5. Each number must have exactly 10 bits set to `1`.
-6. The total number of `1` bits at the same position in all numbers must be
+6. The total number of `1` bits at any given position in all numbers must be
    exactly 10.
 
 There are also other checks made by the program, but we did not get reverse
@@ -2619,17 +2619,17 @@ Revenge of Pwn
 Our task is to write an exploit to "pwn" a
 [`pwntools`](https://github.com/Gallopsled/pwntools) Python script that runs on
 the remtoe server. When we connect, we can upload an executable: this executable
-is then saved and exposed in the local on port 1337. Then, the Python script is
-started. Our executable does not have the right to read the flag, which is at
-`/home/deploy/flag`, but the Python script does. We need to find a way to make
-it read and spit out that file.
+is then saved and exposed in the local server on port 1337. Then, the Python
+script is started and connects to it. Our executable does not have the right to
+read the flag, which is at `/home/deploy/flag`, but the Python script does. We
+need to find a way to make it read and spit out that file.
 
 The Python script does the following:
 
 1. Start listening on port 31337.
 2. Expect to receive a string containing a stack address
    (`stack address @ 0xXXX`) from the program right away.
-3. Prepare and send a shellcode to our program. The shellcode is meant to leak
+3. Prepare and send a shellcode to the program. The shellcode is meant to leak
    an `fd` number from the stack and send it back as a decimal string to the
    Python script by conencting back to port 31337. The code sends the `fd`
    number followed by a `@` character.
@@ -2652,11 +2652,12 @@ assembly program that is being compiled into shellcode.
 
 ### The exploit
 
-The remote server says `ELF size? (MAX: 6144)` when connecting, which makes it
+The remote server says "`ELF size? (MAX: 6144)`" when connecting, which makes it
 seems like it only accepts an ELF file. Sure, we could craft a very simple ELF
-that does a write plus connect, no big deal. However, we can send any kind of
-file and the serer will mark it as executable. We can therefore just send a Bash
-script as executable and make our life 10 times easier.
+that does a write plus connect, no big deal. However, as it turns out, no check
+is made on the server side on the kind of file received, so we can send any kind
+of file and the serer will mark it as executable and run it. We can therefore
+simply send a Bash script as executable and make our life 10 times easier.
 
 Now in our executable we could just send `.incbin "/home/deploy/flag"` and have
 `as` include the flag as raw bytes in the resulting shellcode that is then sent
@@ -2689,7 +2690,7 @@ echo 'stack address @ 0x1234'
 sleep 1
 echo -e '123\n#include "/home/deploy/flag"@' > /dev/tcp/127.0.0.1/31337
 EOF
-} > /dev/tcp/3.115.58.219/9427
+} | nc 3.115.58.219 9427
 ```
 
 This will result in the remote `pwntools` trying to compile something like this:
