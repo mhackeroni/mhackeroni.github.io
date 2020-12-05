@@ -181,7 +181,7 @@ At this point, we just need to free a chunk which content is `/bin/sh\x00` to ge
 
 
 ### The script
-```python=
+```python
 from pwn import *
 
 r = remote("13.112.193.37", 8573)
@@ -1414,7 +1414,7 @@ The garbage collector considers a cell free if its `value >> 3 == 0` and this ol
 
 ![](https://i.imgur.com/2GSOiz3.png)
 
-```python=
+```python
 def craft_node(_id, **kwargs):
     """Helper function to get the bytes of an arbitrary node"""
     s  = p64(_id)
@@ -1490,7 +1490,7 @@ So if we can craft two arbitrary nodes, we can use `connect_node` to get arbitra
 
 For the libc leak we can do the usual unsorted bin leak (free a chunk into the unsorted bin, then read the pointer to the arena that will be placed in the heap).
 Here we create a node with arbitrary big `text_len` to be able to read out of bound, then allocate and free a chunk to read the heap-metadata of the freed chunk.
-```python=
+```python
 nb = create(0)
 # Bug: write_bin with size 0 will return 1 instead of a pointer.
 write_bin(nb, '')
@@ -2253,7 +2253,7 @@ In the end our algorithm is capable of finding a correct pin with an average of 
 
 Once we have the initial state of the PRNG, we face another problem: the actual values being generated are stored in a "pool" of 64 numbers, that is refreshed with 64 new ones every time it is empty. The numbers within the pool are then outputted in reverse order (as explained in this presentation and [video](https://www.youtube.com/watch?v=_Iv6fBrcbAM)). This means that, if the order of the random generation is 1...64||65...128, we get 64...54 and we need to predict 53...1||128...93. Once we get the seed, the "next" number generated will be the 54th. This means that we need to reverse the XorShift128+ algorithm to retrieve the values 53...1! Fortunately, [this isn't a problem at all](https://blog.securityevaluators.com/xorshift128-backward-ff3365dc0c17).
 
-```python=
+```python
 #!/usr/bin/env python3
 import os
 from pwn import remote, process
