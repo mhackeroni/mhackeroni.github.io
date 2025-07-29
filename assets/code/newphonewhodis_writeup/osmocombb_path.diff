@@ -1,0 +1,224 @@
+diff --git a/src/host/layer23/include/osmocom/bb/mobile/gsm411_sms.h b/src/host/layer23/include/osmocom/bb/mobile/gsm411_sms.h
+index 3ed6710c..dbef48ed 100644
+--- a/src/host/layer23/include/osmocom/bb/mobile/gsm411_sms.h
++++ b/src/host/layer23/include/osmocom/bb/mobile/gsm411_sms.h
+@@ -37,5 +37,7 @@ int sms_send(struct osmocom_ms *ms, const char *sms_sca, const char *number,
+ 	const char *text, uint8_t msg_ref);
+ int gsm411_tx_sms_submit(struct osmocom_ms *ms, const char *sms_sca,
+ 	struct gsm_sms *sms);
++int gsm411_tx_sms_submit_print(struct osmocom_ms *ms, const char *sms_sca,
++	struct gsm_sms *sms, void (*print)(struct msgb *, void*), void* priv);
+ 
+ #endif /* _GSM411_SMS_H */
+diff --git a/src/host/layer23/src/mobile/gsm411_sms.c b/src/host/layer23/src/mobile/gsm411_sms.c
+index c476ff40..9ef4fc98 100644
+--- a/src/host/layer23/src/mobile/gsm411_sms.c
++++ b/src/host/layer23/src/mobile/gsm411_sms.c
+@@ -630,6 +630,90 @@ static int gsm340_gen_tpdu(struct msgb *msg, struct gsm_sms *sms)
+ 	return msg->len - old_msg_len;
+ }
+ 
++
++/* Take a SMS in gsm_sms structure and send it. */
++int gsm411_tx_sms_submit_print(struct osmocom_ms *ms, const char *sms_sca,
++	struct gsm_sms *sms, void (*print)(struct msgb *, void*), void *priv)
++{
++	struct msgb *msg;
++	struct gsm_trans *trans;
++	uint8_t *data, *rp_ud_len;
++	int rc;
++	int transaction_id;
++	uint8_t sca[11];	/* max len per 03.40 */
++
++	LOGP(DLSMS, LOGL_INFO, "..._sms_submit()\n");
++
++	/* no running, no transaction */
++	if (!ms->started || ms->shutdown != MS_SHUTDOWN_NONE) {
++		LOGP(DLSMS, LOGL_ERROR, "Phone is down\n");
++		gsm411_sms_report(ms, sms, GSM411_RP_CAUSE_MO_TEMP_FAIL);
++		sms_free(sms);
++		return -EIO;
++	}
++
++	/* allocate transaction with dummy reference */
++	transaction_id = trans_assign_trans_id(ms, GSM48_PDISC_SMS, 0);
++	if (transaction_id < 0) {
++		LOGP(DLSMS, LOGL_ERROR, "No transaction ID available\n");
++		gsm411_sms_report(ms, sms, GSM411_RP_CAUSE_MO_CONGESTION);
++		sms_free(sms);
++		return -ENOMEM;
++	}
++	trans = trans_alloc(ms, GSM48_PDISC_SMS, transaction_id, new_callref++);
++	if (!trans) {
++		LOGP(DLSMS, LOGL_ERROR, "No memory for trans\n");
++		gsm411_sms_report(ms, sms, GSM411_RP_CAUSE_MO_TEMP_FAIL);
++		sms_free(sms);
++		return -ENOMEM;
++	}
++	gsm411_smc_init(&trans->sms.smc_inst, transaction_id, 0,
++		gsm411_mn_recv, gsm411_mm_send);
++	gsm411_smr_init(&trans->sms.smr_inst, transaction_id, 0,
++		gsm411_rl_recv, gsm411_mn_send);
++	trans->sms.sms = sms;
++	trans->sms.sapi = UM_SAPI_SMS;
++
++	msg = gsm411_msgb_alloc();
++
++	/* no orig Address */
++	data = (uint8_t *)msgb_put(msg, 1);
++	data[0] = 0x00;	/* originator length == 0 */
++
++	/* Destination Address */
++        sca[1] = 0x80; /* no extension */
++	sca[1] |= ((sms_sca[0] == '+') ? 0x01 : 0x00) << 4; /* type */
++	sca[1] |= 0x1; /* plan*/
++
++	rc = gsm48_encode_bcd_number(sca, sizeof(sca), 1,
++				sms_sca + (sms_sca[0] == '+'));
++	if (rc < 0) {
++error:
++		gsm411_sms_report(ms, sms, GSM411_RP_CAUSE_SEMANT_INC_MSG);
++		gsm411_trans_free(trans);
++		msgb_free(msg);
++		return rc;
++	}
++	data = msgb_put(msg, rc);
++	memcpy(data, sca, rc);
++
++	/* obtain a pointer for the rp_ud_len, so we can fill it later */
++	rp_ud_len = (uint8_t *)msgb_put(msg, 1);
++
++	/* generate the 03.40 TPDU */
++	rc = gsm340_gen_tpdu(msg, sms);
++	if (rc < 0)
++		goto error;
++	*rp_ud_len = rc;
++
++	LOGP(DLSMS, LOGL_INFO, "TX: SMS DELIVER\n");
++
++	gsm411_push_rp_header(msg, GSM411_MT_RP_DATA_MO, sms->msg_ref);
++	print(priv, msg);
++	return gsm411_smr_send(&trans->sms.smr_inst, GSM411_SM_RL_DATA_REQ,
++		msg);
++}
++
+ /* Take a SMS in gsm_sms structure and send it. */
+ int gsm411_tx_sms_submit(struct osmocom_ms *ms, const char *sms_sca,
+ 	struct gsm_sms *sms)
+diff --git a/src/host/layer23/src/mobile/vty_interface.c b/src/host/layer23/src/mobile/vty_interface.c
+index a0ad9937..4075d4e3 100644
+--- a/src/host/layer23/src/mobile/vty_interface.c
++++ b/src/host/layer23/src/mobile/vty_interface.c
+@@ -946,6 +946,104 @@ DEFUN(sms, sms_cmd, "sms MS_NAME NUMBER .LINE",
+ 	return CMD_SUCCESS;
+ }
+ 
++void print_msgb(void *priv, struct msgb* msg){
++	int i=0;
++	struct vty *vty = priv;
++	for (i=0; i<msg->data_len; i++){
++		vty_out(vty, "%02x", msg->data[i]);
++	}
++	vty_out(vty, "\n");
++}
++
++char * hex2b(char *hex){
++    int len = strlen(hex);
++    char *ret = malloc( len / 2 + 1);
++
++    for (size_t count = 0; count < len/2; count++) {
++        sscanf(hex, "%2hhx", &ret[count]);
++        hex += 2;
++    }
++    return ret;
++}
++
++
++DEFUN(smshex, sms_hex_cmd, "smshex MS_NAME UD_HDR NUMBER .LINE",
++	"Send an SMS\nName of MS (see \"show ms\")\nUD_HDR value\nPhone number to send SMS "
++	"(Use digits '0123456789*#abc', and '+' to dial international)\n"
++	"SMS text\n")
++{
++	struct osmocom_ms *ms;
++	struct gsm_settings *set;
++	struct gsm_settings_abbrev *abbrev;
++	char *number, *sms_sca = NULL;
++
++	ms = get_ms(argv[0], vty);
++	if (!ms)
++		return CMD_WARNING;
++	set = &ms->settings;
++
++	if (!set->sms_ptp) {
++		vty_out(vty, "SMS not supported by this mobile, please enable "
++			"SMS support%s", VTY_NEWLINE);
++		return CMD_WARNING;
++	}
++
++	if (ms->subscr.sms_sca[0])
++		sms_sca = ms->subscr.sms_sca;
++	else if (set->sms_sca[0])
++		sms_sca = set->sms_sca;
++
++	if (!sms_sca) {
++		vty_out(vty, "SMS sms-service-center not defined on SIM card, "
++			"please define one at settings.%s", VTY_NEWLINE);
++		return CMD_WARNING;
++	}
++
++	number = (char *)argv[2];
++	llist_for_each_entry(abbrev, &set->abbrev, list) {
++		if (!strcmp(number, abbrev->abbrev)) {
++			number = abbrev->number;
++			vty_out(vty, "Using number '%s'%s", number,
++				VTY_NEWLINE);
++			break;
++		}
++	}
++	if (vty_check_number(vty, number))
++		return CMD_WARNING;
++
++	// sms_send(ms, sms_sca, number, argv_concat(argv, argc, 2), 42);
++	// struct gsm_sms *sms = sms_from_text(number, 0, argv_concat(argv, argc, 2));
++	char * text_hex = argv_concat(argv, argc, 3);
++	char * text = hex2b(text_hex);
++	int text_len = strlen(text_hex) / 2;
++	struct gsm_sms *sms = sms_alloc();
++
++	if (!sms)
++		return NULL;
++
++	OSMO_STRLCPY_ARRAY(sms->text, text);
++
++	/* FIXME: don't use ID 1 static */
++	sms->reply_path_req = 0;
++	sms->status_rep_req = 0;
++	sms->ud_hdr_ind = atoi((char *)argv[1]);
++	sms->protocol_id = 0; /* implicit */
++	// sms->data_coding_scheme = dcs;
++	sms->data_coding_scheme = 4;
++	OSMO_STRLCPY_ARRAY(sms->address, number);
++	/* Generate user_data */
++	sms->user_data_len = text_len;
++	memcpy(sms->user_data, text, text_len);
++
++
++	if (!sms)
++		return -ENOMEM;
++
++	sms->msg_ref = 42;
++	gsm411_tx_sms_submit_print(ms, sms_sca, sms, print_msgb, vty);
++
++}
++
+ DEFUN(service, service_cmd, "service MS_NAME (*#06#|*#21#|*#67#|*#61#|*#62#"
+ 	"|*#002#|*#004#|*xx*number#|*xx#|#xx#|##xx#|STRING|hangup)",
+ 	"Send a Supplementary Service request\nName of MS (see \"show ms\")\n"
+@@ -2860,6 +2958,7 @@ int ms_vty_init(void)
+ 	install_element(ENABLE_NODE, &call_retr_cmd);
+ 	install_element(ENABLE_NODE, &call_dtmf_cmd);
+ 	install_element(ENABLE_NODE, &sms_cmd);
++	install_element(ENABLE_NODE, &sms_hex_cmd);
+ 	install_element(ENABLE_NODE, &service_cmd);
+ 	install_element(ENABLE_NODE, &test_reselection_cmd);
+ 	install_element(ENABLE_NODE, &delete_forbidden_plmn_cmd);

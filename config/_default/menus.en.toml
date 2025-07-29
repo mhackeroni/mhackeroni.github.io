@@ -1,0 +1,29 @@
+[[main]]
+none = "none"
+
+[[main]]
+name = "Sponsors"
+pageRef = "sponsors"
+identifier = "bzPCCVGFCO"
+weight = 3
+
+[[main]]
+name = "Writeups"
+pageRef = "writeups"
+identifier = "jq91LMdUWR"
+weight = 2
+
+[[main]]
+name = "News"
+pageRef = "news"
+identifier = "4byM5YAT37"
+weight = 1
+
+[[main]]
+name = "Gallery"
+pageRef = "gallery"
+identifier = "EMXRBG3UEa"
+weight = 9_999
+
+[[footer]]
+none = "none"
