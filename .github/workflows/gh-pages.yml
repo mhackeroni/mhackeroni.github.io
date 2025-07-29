@@ -5,7 +5,7 @@ name: GitHub Pages
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   build-deploy:
@@ -27,9 +27,14 @@ jobs:
       - name: Build
         run: hugo --minify
 
+      - name: Copy CNAME and LICENSE
+        run: |
+          cp CNAME ./public/ || true
+          cp LICENSE ./public/ || true
+
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
-        if: ${{ github.ref == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/master' }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
