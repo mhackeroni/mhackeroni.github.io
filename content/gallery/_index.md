@@ -15,5 +15,6 @@ Here's a collection of photos showcasing our team's journey, achievements, and m
 <img src="us/mhackeroni_win_HAS4.jpeg" class="grid-w33" alt="mhackeroni winning Hack-A-Sat 4" />
 <img src="us/mhackeroni-hack-a-sat.jpg" class="grid-w33" alt="mhackeroni team at Hack-A-Sat" />
 <img src="us/satellite-shoot.jpg" class="grid-w33" alt="picture of earth from space" />
+<img src="us/defcon-26.webp" class="grid-w33" alt="mhackeroni team at DEF CON 26" />
 {{< /gallery >}}
 
