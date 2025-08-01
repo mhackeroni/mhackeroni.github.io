@@ -35,6 +35,14 @@ Here are the amazing sponsors who are supporting us this year:
     </a>
 </div>
 
+<h3 class="supporter-header">⏺ Supporters</h3>
+
+<div class="sponsor">
+    <a class="supporter" href="https://stackbits.eu/">
+        <img src="/sponsors-img/stackbits.png">
+    </a>
+</div>
+
 <h3 class="academic-header">Academic Sponsors</h2>
 
 <div class="sponsor">
@@ -432,5 +440,8 @@ object-fit: contain;
 }
 .big-detail summary{
     font-size: 1.4em;
+}
+.sponsor img {
+    pointer-events: none;
 }
 </style>

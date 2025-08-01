@@ -48,9 +48,12 @@ mhackeroni was born as the union of multiple italian teams. We are many, you may
 <!-- CSS -->
 <style>
 :root {
-  --item-w: 6rem;
-  --item-h: 6rem;
-  --gap: 2rem;
+  --item-w: 5.8rem;
+  --item-h: 5.8rem;
+  --gap: 1.8rem;
+}
+img {
+  pointer-events: none;
 }
 .team-container {
   display: flex;
