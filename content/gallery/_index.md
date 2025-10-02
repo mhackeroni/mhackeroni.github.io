@@ -4,6 +4,7 @@ title: "📷  Photo Gallery"
 
 Here's a collection of photos showcasing our team's journey, achievements, and memorable moments from various CTF competitions and events. From our early days to recent victories, these images capture the spirit of .
 {{< gallery >}}
+<img src="us/defcon33-finals.jpg" class="grid-w33" alt="mhackeroni at DEF CON 33 finals" />
 <img src="us/another.webp" class="grid-w33" alt="mhackeroni team members" />
 <img src="us/defcon-32-finals.jpg" class="grid-w33" alt="mhackeroni at DEF CON 32 finals" />
 <img src="us/defcon-32-quals.jpg" class="grid-w33" alt="mhackeroni team photo at polimi after defcon 32 quals" />
